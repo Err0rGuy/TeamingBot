@@ -185,7 +185,6 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
         for (Member member : team.getMembers()) {
             try {
                 if (isSuperGroup) {
-                    // 🟢 Send jump link for supergroups
                     String link = "https://t.me/c/" + String.valueOf(groupChatId).substring(4) + "/" + messageId;
                     String text = "💬 New message in *" + team.getName() + "* team at *" +
                             groupMessage.getChat().getTitle() + "*:\n\n" +
@@ -199,7 +198,6 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
                     execute(pm);
 
                 } else {
-                    // 🔵 Forward message for normal groups
                     SendMessage header = new SendMessage();
                     header.setChatId(member.getTelegramId().toString());
                     header.setText("💬 New message in *" + team.getName() + "* team at *" + groupMessage.getChat().getTitle() + "*");
@@ -230,7 +228,6 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
             }
         }
 
-        // Warn group if some users didn’t get the message
         if (!failedUsers.isEmpty()) {
             StringBuilder warnText = new StringBuilder("⚠️ The following users have not started the bot and did not receive the message:\n");
             for (String u : failedUsers) {
