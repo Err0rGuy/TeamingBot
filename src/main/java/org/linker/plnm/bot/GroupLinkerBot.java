@@ -1,12 +1,14 @@
 package org.linker.plnm.bot;
 
-import org.linker.plnm.configuration.BotProperties;
+import jakarta.annotation.PostConstruct;
+import org.linker.plnm.configuration.BotSettings;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
@@ -18,17 +20,16 @@ import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Service
+
 public class GroupLinkerBot extends TelegramLongPollingBot {
 
-    private final BotProperties botProperties;
+    private final BotSettings botSettings;
 
     private final BotPrivateChat botPrivateChat;
 
@@ -38,15 +39,40 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    public GroupLinkerBot(BotProperties botProperties, BotPrivateChat botPrivateChat,
-                          TeamingOperations teamingOperations, TeamRepository teamRepository, ChatGroupRepository chatGroupRepository) {
-        super(botProperties.getToken());
-        this.botProperties = botProperties;
+
+    public GroupLinkerBot(
+            DefaultBotOptions options, BotSettings botSettings, BotPrivateChat botPrivateChat,
+            TeamingOperations teamingOperations, TeamRepository teamRepository,
+            ChatGroupRepository chatGroupRepository
+    ) {
+        super(options, botSettings.getToken()); // with default bot options contains proxy settings
+        System.out.println("host: " + options.getProxyHost() + " port: " +
+                options.getProxyPort() + " type: " + options.getProxyType());
+        this.botSettings = botSettings;
+        this.botPrivateChat = botPrivateChat;
+        this.teamingOperations = teamingOperations;
+        this.teamRepository = teamRepository;
+        this.chatGroupRepository = chatGroupRepository;
+    }
+
+
+    public GroupLinkerBot(
+            BotSettings botSettings, BotPrivateChat botPrivateChat,
+            TeamingOperations teamingOperations, TeamRepository teamRepository,
+            ChatGroupRepository chatGroupRepository
+    ) {
+        super(botSettings.getToken());
+        this.botSettings = botSettings;
         this.botPrivateChat = botPrivateChat;
         this.teamingOperations = teamingOperations;
         this.teamRepository = teamRepository;
         this.chatGroupRepository = chatGroupRepository;
 
+    }
+
+
+    @PostConstruct
+    public void init() {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(this);
@@ -57,7 +83,7 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return botProperties.getUsername();
+        return botSettings.getUsername();
     }
 
     @Override
@@ -89,13 +115,16 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
             while (matcher.find()) {
                 String teamName = matcher.group(1);
                 Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
+                if (chatGroup.isEmpty())
+                    break;
                 Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroup(teamName, chatGroup.get());
                 if (teamOpt.isPresent()) {
                     Team team = teamOpt.get();
                     sendMessageToTeamMembers(team, message);
                 }
             }
-        }
+        }else
+            return;
 
         if (text.equals("/start"))
             response = botPrivateChat.sendStartMessage(chatId);
@@ -110,6 +139,16 @@ public class GroupLinkerBot extends TelegramLongPollingBot {
 
         else if (text.toLowerCase().contains("good night")){
             response.setText("Good Night!");
+            response.setReplyToMessageId(message.getMessageId());
+        }
+
+        else if (text.contains("صبح بخیر")) {
+            response.setText("صبح بخیر");
+            response.setReplyToMessageId(message.getMessageId());
+        }
+
+        else if (text.toLowerCase().contains("good morning")){
+            response.setText("Good Morning!");
             response.setReplyToMessageId(message.getMessageId());
         }
 

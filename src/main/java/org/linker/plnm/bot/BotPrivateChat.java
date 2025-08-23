@@ -23,12 +23,15 @@ public class BotPrivateChat {
                 This bot makes it easy to <b>organize and message teams</b> inside your group.
                 
                 ✨ <b>How it works:</b> \s
+                
                 1️⃣ Create teams for your group members. \s
-                2️⃣ Mention a team with <code>#teamname</code> in the group chat. \s
+                
+                2️⃣ Mention a team with <code>~!teamname</code> in the group chat. \s
+                
                 3️⃣ All members of that team will get a <b>private message</b> 📩 with your message + a direct link 🔗 back to the group message.
                 
                 💡 <b>Example:</b> \s
-                <pre>hello to #data team</pre> \s
+                <pre>hello to ~!MyAmazingTeam team</pre> \s
                 ➡️ All "data team" members receive your message instantly! \s
                 
                 ✅ Perfect for companies, projects, and communities that need <b>quick & private coordination</b>.
@@ -58,9 +61,19 @@ public class BotPrivateChat {
                 
                 Here’s what you can do:
                 
-                🆕<b>/create_team</b> – Create a new team. \s
+                📜 <b>/start</b> – Description. \s
+                
+                💡 <b>/hint</b> – Commands. \s
+                
+                🆕 <b>/create_team</b> – Create a new team. \s
+                
                 ❌ <b>/remove_team</b> – Remove an existing team. \s
-                ✏️ <b>/edit_team</b> – Edit a team’s name. \s
+                
+                ✏️ <b>/edit_team</b> – Edit a team’s name, and members. \s
+                
+                📃 <b>/show_teams</b> – List all teams and groups. \s
+                
+                Good Luck 🙃
                 """;
         message.setChatId(chatId.toString());
         message.setText(hintText);
