@@ -26,3 +26,6 @@ TeamLinkerBot is a Telegram bot designed to streamline team communication in a s
 
 Ensures unauthorized users cannot modify teams or send messages.
 
+## ⚙️ Technologies
+ - Java spring boot (Hibernate ORM)
+
