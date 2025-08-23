@@ -4,16 +4,32 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
 
 @Getter
 @Setter
 @Component
 @ConfigurationProperties(prefix = "bot")
-public class BotProperties {
+public class BotSettings {
 
     private String name;
 
     private String username;
 
     private String token;
+
+    private Proxy proxy = null;
+
+    @Getter
+    @Setter
+    public static class Proxy {
+
+        private boolean useProxy;
+
+        private String host;
+
+        private int port;
+
+        private DefaultBotOptions.ProxyType proxyType;
+    }
 }
