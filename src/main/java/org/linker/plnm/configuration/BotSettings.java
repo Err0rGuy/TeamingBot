@@ -1,13 +1,13 @@
 package org.linker.plnm.configuration;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 
-@Getter
-@Setter
+@Data
 @Component
 @ConfigurationProperties(prefix = "bot")
 public class BotSettings {
@@ -20,8 +20,7 @@ public class BotSettings {
 
     private Proxy proxy = null;
 
-    @Getter
-    @Setter
+    @Data
     public static class Proxy {
 
         private boolean useProxy;
