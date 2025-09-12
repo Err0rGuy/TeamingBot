@@ -1,11 +1,13 @@
 package org.linker.plnm.bot;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
+import org.linker.plnm.utilities.IOUtilities;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,7 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class TeamingOperations {
+public class Operations {
 
     private final TeamRepository teamRepository;
 
@@ -27,24 +29,60 @@ public class TeamingOperations {
 
     private final Map<String, HashMap<Long, String>> pendingOperations = new ConcurrentHashMap<>();
 
-    public TeamingOperations(TeamRepository teamRepository, MemberRepository memberRepository, ChatGroupRepository chatGroupRepository) {
+    public Operations(
+            TeamRepository teamRepository,
+            MemberRepository memberRepository,
+            ChatGroupRepository chatGroupRepository
+    ) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
     }
 
+    /// Bot start actions
+    public SendMessage onBotStart(Long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId.toString());
+        String text = IOUtilities.readFile(getClass().getClassLoader().getResourceAsStream("static/botStart.html"));
+        message.setText(text);
+        message.setParseMode("HTML");
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText(EmojiParser.parseToUnicode("\uD83D\uDCA1Hint..."));
+        button.setCallbackData("/hint");
+
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        row.add(button);
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(row);
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        keyboard.setKeyboard(rows);
+        message.setReplyMarkup(keyboard);
+        return message;
+    }
+
+    /// Hint message
+    public SendMessage hintMessage(Long chatId) {
+        SendMessage message = new SendMessage();
+        String hintText = IOUtilities.readFile(getClass().getClassLoader().getResourceAsStream("static/botHint.html"));
+        message.setChatId(chatId.toString());
+        message.setText(hintText);
+        message.setParseMode("HTML");
+        return message;
+    }
+
+    /// Creating a new team
     public SendMessage createTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        ChatGroup group = null;
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/create_team <TeamName>");
-            return response;
-        }
-        ChatGroup group = chatGroupRepository.findByChatId(chatId)
-                .orElseGet(() -> chatGroupRepository.save(new ChatGroup(chatId, "Unknown")));
+        else
+            group = chatGroupRepository.findByChatId(chatId)
+                    .orElseGet(() -> chatGroupRepository.save(new ChatGroup(chatId, "Unknown")));
 
         if (teamRepository.existsByNameAndChatGroup(teamName, group))
              response.setText("⚠️ A team with this name already exists in this group!");
-
         else {
             Team team = new Team();
             team.setName(teamName);
@@ -55,13 +93,15 @@ public class TeamingOperations {
         return response;
     }
 
+    /// Removing an existing team
     public SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        Optional<ChatGroup> group = Optional.empty();
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/remove_team <TeamName>");
-            return response;
-        }
-        Optional<ChatGroup> group = chatGroupRepository.findByChatId(chatId);
+        else
+            group = chatGroupRepository.findByChatId(chatId);
+
         if (group.isPresent() && teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
             teamRepository.deleteTeamByNameAndChatGroup(teamName, group.get());
             response.setText("✅ Team '" + teamName + "' deleted successfully!");
@@ -71,6 +111,7 @@ public class TeamingOperations {
         return response;
     }
 
+    /// List all teams in the group
     @Transactional(readOnly = true)
     public SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
@@ -80,38 +121,24 @@ public class TeamingOperations {
             response.setText("No team found!");
             return response;
         }
-
         var teams = teamRepository.findTeamByChatGroup(group.get());
-
         if (teams.isEmpty()) {
             response.setText("No team found!");
             return response;
         }
-
         StringBuilder text = new StringBuilder();
         int count = 1;
         text.append("<b>Teams:</b>\n\n");
 
         for (Team team : teams) {
-            text.append("<b>")
-                    .append(count)
-                    .append(" -> ")
-                    .append(team.getName())
-                    .append(":</b>")
-                    .append("\n");
-
+            text.append("<b>").append(count).append(" -> ").append(team.getName()).append("</b>").append("\n");
             // copy members to avoid Hibernate concurrent modification
             List<Member> members = new ArrayList<>(team.getMembers());
 
-            if (members.isEmpty()) {
+            if (members.isEmpty())
                 text.append("\tNo members in this team!");
-            } else {
-                for (Member member : members) {
-                    text.append("\t")
-                            .append(member.getUsername())
-                            .append("\n");
-                }
-            }
+            else for (Member member : members)
+                    text.append("\t").append(member.getUsername()).append("\n");
             text.append("\n\n");
             count++;
         }
@@ -120,14 +147,13 @@ public class TeamingOperations {
         return response;
     }
 
-
+    /// Editing an existing team, (edit name and members)
     public SendMessage editTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        Optional<ChatGroup> group = Optional.empty();
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/create_team <TeamName>");
-            return response;
-        }
-        Optional<ChatGroup> group = chatGroupRepository.findByChatId(chatId);
+        else group = chatGroupRepository.findByChatId(chatId);
         if (group.isPresent() && teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
             var innerMap = new  HashMap<Long, String>();
             innerMap.put(chatId, null);
@@ -164,13 +190,12 @@ public class TeamingOperations {
         return response;
     }
 
+    /// Pending operation: renaming a team
     public SendMessage pendingForRenameTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
-            return response;
-        }
-        if (pendingOperations.containsKey(teamName))
+        else if (pendingOperations.containsKey(teamName))
             pendingOperations.get(teamName).put(chatId, "rename_team");
         else {
             response.setText("⚠️ Invalid Operation!");
@@ -180,13 +205,12 @@ public class TeamingOperations {
         return response;
     }
 
+    /// Pending operation: adding a new member to a team
     public SendMessage pendingForAddMember(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
-            return response;
-        }
-        if (pendingOperations.containsKey(teamName))
+        else if (pendingOperations.containsKey(teamName))
             pendingOperations.get(teamName).put(chatId, "add_member");
         else {
             response.setText("⚠️ Invalid Operation!");
@@ -196,13 +220,12 @@ public class TeamingOperations {
         return response;
     }
 
+    /// Pending operation: removing a member from a team
     public SendMessage pendingForRemoveMember(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null){
+        if (teamName == null)
             response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
-            return response;
-        }
-        if (pendingOperations.containsKey(teamName))
+        else if (pendingOperations.containsKey(teamName))
             pendingOperations.get(teamName).put(chatId, "remove_member");
         else {
             response.setText("⚠️ Invalid Operation!");
@@ -212,6 +235,7 @@ public class TeamingOperations {
         return response;
     }
 
+    /// Pending operation execution
     @Transactional
     public SendMessage doOperation(long chatId, String value, Message message){
         SendMessage response = new SendMessage();
@@ -226,8 +250,10 @@ public class TeamingOperations {
                 break;
             }
         }
-        if (pendingTeam.isEmpty())
+        if (pendingTeam.isEmpty()) {
+            response.setText("⚠️ Operation failed!");
             return response;
+        }
 
         Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
         if (chatGroup.isEmpty()){

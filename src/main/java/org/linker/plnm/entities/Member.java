@@ -37,4 +37,13 @@ public class Member {
     public int hashCode() {
         return telegramId != null ? telegramId.hashCode() : 0;
     }
+
+
+    public String getDisplayName(){
+        return this.username != null
+                ? "@" + this.username
+                : this.firstName != null
+                ? this.firstName
+                : this.telegramId.toString();
+    }
 }
