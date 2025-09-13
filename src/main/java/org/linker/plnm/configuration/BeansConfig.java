@@ -1,6 +1,6 @@
 package org.linker.plnm.configuration;
 
-import org.linker.plnm.bot.TeamingBot;
+import org.linker.plnm.bot.Bot;
 import org.linker.plnm.bot.UpdateHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +15,7 @@ public class BeansConfig {
     }
 
     @Bean
-    public TeamingBot teamingBot(
+    public Bot teamingBot(
             BotSettings botSettings,
             DefaultBotOptions defaultBotOptions,
             UpdateHandler updateHandler
@@ -24,10 +24,10 @@ public class BeansConfig {
             defaultBotOptions.setProxyHost(botSettings.getProxy().getHost());
             defaultBotOptions.setProxyPort(botSettings.getProxy().getPort());
             defaultBotOptions.setProxyType(botSettings.getProxy().getProxyType());
-            return new TeamingBot(defaultBotOptions, botSettings, updateHandler);
+            return new Bot(defaultBotOptions, botSettings, updateHandler);
         }
         else
-            return new TeamingBot(botSettings, updateHandler);
+            return new Bot(botSettings, updateHandler);
     }
 
 }

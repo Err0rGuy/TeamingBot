@@ -20,8 +20,9 @@ public class Member {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
     private String firstName;
+
+    private String lastName;
 
     @ManyToMany(mappedBy = "members", cascade = {CascadeType.PERSIST})
     private Set<Team> teams = new HashSet<>();
@@ -39,7 +40,7 @@ public class Member {
     }
 
 
-    public String getDisplayName(){
+    public String getDisplayName() {
         return this.username != null
                 ? "@" + this.username
                 : this.firstName != null

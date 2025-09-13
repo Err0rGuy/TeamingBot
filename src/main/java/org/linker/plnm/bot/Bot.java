@@ -14,13 +14,14 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import java.util.Optional;
 
 
-public class TeamingBot extends TelegramLongPollingBot {
+public class Bot extends TelegramLongPollingBot {
 
     private final UpdateHandler updateHandler;
 
     private final BotSettings botSettings;
 
-    public TeamingBot(
+
+    public Bot(
             DefaultBotOptions options,
             BotSettings botSettings,
             UpdateHandler updateHandler
@@ -31,7 +32,7 @@ public class TeamingBot extends TelegramLongPollingBot {
     }
 
 
-    public TeamingBot(
+    public Bot(
             BotSettings botSettings,
             UpdateHandler updateHandler
     ) {
@@ -61,38 +62,35 @@ public class TeamingBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(@NotNull Update update) {
-        Optional<SendMessage> response = Optional.empty();
+        Optional<SendMessage> response;
         Message message = null;
-        var text = "";
-        var chatId = 0L;
-        var userId = 0L;
         var isCallback = false;
 
-        if (update.hasMessage() && update.getMessage().hasText()) {
+        if (update.hasMessage() && update.getMessage().hasText())
             message = update.getMessage();
-            text = message.getText();
-            chatId = message.getChatId();
-            userId = message.getFrom().getId();
-        } else if (update.hasCallbackQuery()) {
+        else if (update.hasCallbackQuery()) {
             isCallback = true;
             message = update.getCallbackQuery().getMessage();
-            text = update.getCallbackQuery().getData();
-            chatId = message.getChatId();
-            userId = update.getCallbackQuery().getFrom().getId();
+            message.setText(update.getCallbackQuery().getData());
+            message.setFrom(update.getCallbackQuery().getFrom());
         }
-        if (!(message == null || text == null)) {
-            if (isCallback)
-                response = updateHandler.callBackUpdateHandler(message, text, chatId, userId);
-            else
-                response = updateHandler.messageUpdateHandler(message, text, chatId, userId);
-        }
-        if (response.isEmpty())
+        if (message == null || !message.hasText())
             return;
-        response.get().setChatId(chatId);
-        try {
-            execute(response.get());
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+        if (isCallback)
+            response = updateHandler.callBackUpdateHandler(message);
+        else
+            response = updateHandler.textUpdateHandler(message);
+
+
+        if (response.isPresent()) {
+            var text = response.get().getText();
+            if (text == null || text.isEmpty())
+                return;
+            try {
+                execute(response.get());
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

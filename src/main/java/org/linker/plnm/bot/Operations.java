@@ -4,6 +4,7 @@ import com.vdurmont.emoji.EmojiParser;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
+import org.linker.plnm.mappers.TelegramUserMapper;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
@@ -12,11 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class Operations {
@@ -39,74 +41,68 @@ public class Operations {
         this.chatGroupRepository = chatGroupRepository;
     }
 
-    /// Bot start actions
-    public SendMessage onBotStart(Long chatId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId.toString());
+    /// Bot start action
+    public SendMessage onBotStart(Message message) {
+        var optMember = TelegramUserMapper.mapToMember(message.getFrom());
+        if (optMember.isEmpty())
+            return null;
+        var member = optMember.get();
+        if (!memberRepository.existsById(member.getTelegramId()))
+            memberRepository.save(member);
         String text = IOUtilities.readFile(getClass().getClassLoader().getResourceAsStream("static/botStart.html"));
-        message.setText(text);
-        message.setParseMode("HTML");
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText(EmojiParser.parseToUnicode("\uD83D\uDCA1Hint..."));
-        button.setCallbackData("/hint");
-
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(button);
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        rows.add(row);
-
-        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        InlineKeyboardButton button = KeyboardBuilder.buildButton(
+                EmojiParser.parseToUnicode("\uD83D\uDCA1Hint..."), "/hint"
+        );
+        List<InlineKeyboardButton> row = new ArrayList<>(List.of(button));
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>(List.of(row));
+        var keyboard = new InlineKeyboardMarkup();
         keyboard.setKeyboard(rows);
-        message.setReplyMarkup(keyboard);
-        return message;
+        SendMessage sendMessage = MessageBuilder.buildMessage(member.getTelegramId(), text, "HTML");
+        sendMessage.setReplyMarkup(keyboard);
+        return sendMessage;
     }
 
     /// Hint message
     public SendMessage hintMessage(Long chatId) {
-        SendMessage message = new SendMessage();
         String hintText = IOUtilities.readFile(getClass().getClassLoader().getResourceAsStream("static/botHint.html"));
-        message.setChatId(chatId.toString());
-        message.setText(hintText);
-        message.setParseMode("HTML");
-        return message;
+        return MessageBuilder.buildMessage(chatId, hintText, "HTML");
     }
 
     /// Creating a new team
-    public SendMessage createTeam(Long chatId, String teamName) {
+    public SendMessage createTeam(Long chatId, String groupName, String teamName) {
         SendMessage response = new SendMessage();
-        ChatGroup group = null;
-        if (teamName == null)
+        ChatGroup group;
+        if (teamName == null) {
             response.setText("⚠️ Please provide a team name!\n/create_team <TeamName>");
-        else
-            group = chatGroupRepository.findByChatId(chatId)
-                    .orElseGet(() -> chatGroupRepository.save(new ChatGroup(chatId, "Unknown")));
-
-        if (teamRepository.existsByNameAndChatGroup(teamName, group))
-             response.setText("⚠️ A team with this name already exists in this group!");
-        else {
-            Team team = new Team();
-            team.setName(teamName);
-            team.setChatGroup(group);
-            teamRepository.save(team);
-            response.setText("✅ Team '" + teamName + "' created successfully!");
+            return response;
         }
+        group = chatGroupRepository.findByChatId(chatId)
+                .orElseGet(() -> chatGroupRepository.save(new ChatGroup(chatId, groupName)));
+        if (teamRepository.existsByNameAndChatGroup(teamName, group)) {
+            response.setText("⚠️ A team with this name already exists in this group!");
+            return response;
+        }
+        Team team = new Team();
+        team.setName(teamName);
+        team.setChatGroup(group);
+        teamRepository.save(team);
+        response.setText("✅ Team '" + teamName + "' created successfully!");
         return response;
     }
 
     /// Removing an existing team
     public SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        Optional<ChatGroup> group = Optional.empty();
-        if (teamName == null)
+        Optional<ChatGroup> group;
+        if (teamName == null) {
             response.setText("⚠️ Please provide a team name!\n/remove_team <TeamName>");
-        else
-            group = chatGroupRepository.findByChatId(chatId);
-
+            return response;
+        }
+        group = chatGroupRepository.findByChatId(chatId);
         if (group.isPresent() && teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
             teamRepository.deleteTeamByNameAndChatGroup(teamName, group.get());
             response.setText("✅ Team '" + teamName + "' deleted successfully!");
-        }
-        else
+        } else
             response.setText("⚠️ Team '" + teamName + "' does not exist in this group!");
         return response;
     }
@@ -136,209 +132,155 @@ public class Operations {
             List<Member> members = new ArrayList<>(team.getMembers());
 
             if (members.isEmpty())
-                text.append("\tNo members in this team!");
+                text.append(" • No members in this team!");
             else for (Member member : members)
-                    text.append("\t").append(member.getUsername()).append("\n");
+                text.append(" • ").append(member.getDisplayName()).append("\n");
             text.append("\n\n");
             count++;
         }
-        response.setText(text.toString());
-        response.setParseMode("HTML");
+        response = MessageBuilder.buildMessage(chatId, text.toString(), "HTML");
         return response;
     }
 
     /// Editing an existing team, (edit name and members)
     public SendMessage editTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        Optional<ChatGroup> group = Optional.empty();
-        if (teamName == null)
-            response.setText("⚠️ Please provide a team name!\n/create_team <TeamName>");
-        else group = chatGroupRepository.findByChatId(chatId);
-        if (group.isPresent() && teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
-            var innerMap = new  HashMap<Long, String>();
-            innerMap.put(chatId, null);
-            pendingOperations.put(teamName, innerMap);
-            InlineKeyboardButton renameTeamButton = InlineKeyboardButton.builder()
-                    .text("Rename Team")
-                    .callbackData("/rename_team " + teamName)
-                    .build();
-
-            InlineKeyboardButton addMemberButton = InlineKeyboardButton.builder()
-                    .text("Add member")
-                    .callbackData("/add_member " + teamName)
-                    .build();
-
-            InlineKeyboardButton removeMemberButton = InlineKeyboardButton.builder()
-                    .text("Remove member")
-                    .callbackData("/remove_member " + teamName)
-                    .build();
-
-            List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-            keyboard.add(List.of(renameTeamButton));
-            keyboard.add(List.of(addMemberButton));
-            keyboard.add(List.of(removeMemberButton));
-
-            InlineKeyboardMarkup inlineKeyboard = InlineKeyboardMarkup.builder()
-                    .keyboard(keyboard)
-                    .build();
-
-            response.setReplyMarkup(inlineKeyboard);
-            response.setText("What do you want to do?");
+        if (teamName == null) {
+            response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
+            return response;
         }
-        else
+        var group = chatGroupRepository.findByChatId(chatId);
+        if (group.isEmpty() || !teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
             response.setText("⚠️ Team '" + teamName + "' does not exist in this group!");
+            return response;
+        }
+        var operation = new HashMap<Long, String>();
+        operation.put(chatId, null);
+        pendingOperations.put(teamName, operation);
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        var renameTeamButton = KeyboardBuilder.buildButton("Rename Team", "/rename_team " + teamName);
+        var addMemberButton = KeyboardBuilder.buildButton("Add Member", "/add_member " + teamName);
+        var removeMemberButton = KeyboardBuilder.buildButton("Remove Member", "/remove_member " + teamName);
+        keyboard.add(List.of(renameTeamButton));
+        keyboard.add(List.of(addMemberButton));
+        keyboard.add(List.of(removeMemberButton));
+        InlineKeyboardMarkup inlineKeyboard = InlineKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .build();
+        response.setReplyMarkup(inlineKeyboard);
+        response.setText("What do you want to do?");
         return response;
     }
 
-    /// Pending operation: renaming a team
-    public SendMessage pendingForRenameTeam(Long chatId, String teamName) {
+    /// Adding operation to pending list
+    public SendMessage addToPendingOps(Long chatId, String teamName, String operation, String argName) {
         SendMessage response = new SendMessage();
         if (teamName == null)
-            response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
+            response.setText("⚠️ Please provide a team name!\n/your_command <TeamName>");
         else if (pendingOperations.containsKey(teamName))
-            pendingOperations.get(teamName).put(chatId, "rename_team");
+            pendingOperations.get(teamName).put(chatId, operation);
         else {
             response.setText("⚠️ Invalid Operation!");
             return response;
         }
-        response.setText("Okay, Send me the new name");
-        return response;
-    }
-
-    /// Pending operation: adding a new member to a team
-    public SendMessage pendingForAddMember(Long chatId, String teamName) {
-        SendMessage response = new SendMessage();
-        if (teamName == null)
-            response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
-        else if (pendingOperations.containsKey(teamName))
-            pendingOperations.get(teamName).put(chatId, "add_member");
-        else {
-            response.setText("⚠️ Invalid Operation!");
-            return response;
-        }
-        response.setText("Okay, Reply to the member message");
-        return response;
-    }
-
-    /// Pending operation: removing a member from a team
-    public SendMessage pendingForRemoveMember(Long chatId, String teamName) {
-        SendMessage response = new SendMessage();
-        if (teamName == null)
-            response.setText("⚠️ Please provide a team name!\n/edit_team <TeamName>");
-        else if (pendingOperations.containsKey(teamName))
-            pendingOperations.get(teamName).put(chatId, "remove_member");
-        else {
-            response.setText("⚠️ Invalid Operation!");
-            return response;
-        }
-        response.setText("Okay, Reply to the member message");
+        response.setText("Okay, Send me the " + argName);
         return response;
     }
 
     /// Pending operation execution
     @Transactional
-    public SendMessage doOperation(long chatId, String value, Message message){
+    public SendMessage performPendingOps(long chatId, String value) {
         SendMessage response = new SendMessage();
         String pendingTeam = "";
         String operation = "";
         HashMap<Long, String> innerMap;
-        for(String teamName : pendingOperations.keySet()){
+        for (String teamName : pendingOperations.keySet()) {
             innerMap = pendingOperations.get(teamName);
-            if (innerMap.containsKey(chatId)){
-                pendingTeam =  teamName;
+            if (innerMap.containsKey(chatId)) {
+                pendingTeam = teamName;
                 operation = innerMap.get(chatId);
                 break;
             }
         }
-        if (pendingTeam.isEmpty()) {
-            response.setText("⚠️ Operation failed!");
-            return response;
-        }
 
         Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
-        if (chatGroup.isEmpty()){
-            response.setText("Invalid team!");
-            return response;
-        }
+        if (chatGroup.isEmpty())
+            return null;
         Optional<Team> team = teamRepository.findTeamByNameAndChatGroup(pendingTeam, chatGroup.get());
-
-        String finalOperation = operation;
-        team.ifPresent(t -> {
-            switch (finalOperation) {
-                case "rename_team" -> {
-                    if (teamRepository.existsByNameAndChatGroup(value, chatGroup.get()))
-                        response.setText("⚠️ Team with name " + value + " already exists!");
-                    else {
-                        t.setName(value);
-                        teamRepository.save(t);
-                        response.setText("✅ Success!");
-                    }
-                }
-                case "add_member" -> {
-                    User user;
-                    if (message.getReplyToMessage() == null) {
-                        response.setText("Please reply to the member message!");
-                        return;
-                    }
-                    user = message.getReplyToMessage().getFrom();
-                    if (user.getUserName() == null) {
-                        response.setText("⚠️ This user doesn't have a username!");
-                        return;
-                    }
-                    Member member = memberRepository.findByUsername(user.getUserName())
-                            .orElseGet(() -> memberRepository.save(
-                                    Member.builder()
-                                            .username(user.getUserName())
-                                            .firstName(user.getFirstName())
-                                            .telegramId(user.getId())
-                                            .build()
-                            ));
-
-                    if (t.getMembers().contains(member))
-                        response.setText("⚠️ " + user.getFirstName() + " is already in this team!");
-                    else {
-                        t.getMembers().add(member);
-                        member.getTeams().add(t);
-                        teamRepository.save(t);
-                        response.setText("✅ Success!");
-                    }
-                }
-                case "remove_member" -> {
-                    User user;
-                    if (message.getReplyToMessage() == null) {
-                        response.setText("Please reply to the member message!");
-                        return;
-                    }
-                    user = message.getReplyToMessage().getFrom();
-                    if (user.getUserName() == null) {
-                        response.setText("⚠️ This user doesn't have a username!");
-                        return;
-                    }
-                    Member member = memberRepository.findByUsername(user.getUserName())
-                            .orElseGet(() -> memberRepository.save(
-                                    Member.builder()
-                                            .username(user.getUserName())
-                                            .firstName(user.getFirstName())
-                                            .telegramId(user.getId())
-                                            .build()
-                            ));
-
-                    if (!t.getMembers().contains(member))
-                        response.setText("⚠️ " + user.getFirstName() + " not found in this team!");
-                    else {
-                        t.getMembers().remove(member);
-                        member.getTeams().remove(t);
-                        teamRepository.save(t);
-                        response.setText("✅ Success!");
-                    }
-                }
-            }
-
-        });
         if (team.isEmpty())
-            response.setText("Team not found!");
+            return null;
+        switch (operation) {
+            case "/rename_team" -> response = renameTeam(value, team.get(), chatGroup.get());
+            case "/add_member" -> response = addMemberToTeam(value, team.get());
+            case "/remove_member" -> response = removeMemberFromTeam(value, team.get());
+        }
         pendingOperations.clear();
         return response;
     }
 
+    ///  Renaming an existing team
+    private SendMessage renameTeam(String newName, Team team, ChatGroup chatGroup) {
+        SendMessage response = new SendMessage();
+        if (teamRepository.existsByNameAndChatGroup(newName, chatGroup)) {
+            response.setText("⚠️ Team with name " + newName + " already exists!");
+            return response;
+        }
+        team.setName(newName);
+        teamRepository.save(team);
+        response.setText("✅ Success!");
+        return response;
+    }
+
+    /// Adding new members to a team
+    private SendMessage addMemberToTeam(String userNames, Team team) {
+        Pattern pattern = Pattern.compile("@([A-Za-z0-9_]{5,32})");
+        Matcher matcher = pattern.matcher(userNames);
+        StringBuilder responseText = new StringBuilder();
+        System.out.println(userNames);
+        var response = new SendMessage();
+        while (matcher.find()) {
+            String username = matcher.group(1).trim();
+            var member = memberRepository.findByUsername(username);
+            if (member.isEmpty()) {
+                responseText.append("⚠️ Member with username: @").append(username).append(" didn't start the bot yet!").append("\n");
+                continue;
+            }
+            if (team.getMembers().contains(member.get())) {
+                responseText.append("⚠️ @").append(username).append(" already is in this team!").append("\n");
+                continue;
+            }
+            team.getMembers().add(member.get());
+            member.get().getTeams().add(team);
+            teamRepository.save(team);
+            responseText.append("✅ Success to add @").append(username).append("\n");
+        }
+        response.setText(responseText.toString());
+        return response;
+    }
+
+    /// Removing members from a team
+    private SendMessage removeMemberFromTeam(String userNames, Team team) {
+        Pattern pattern = Pattern.compile("@([A-Za-z0-9_]{5,32})");
+        Matcher matcher = pattern.matcher(userNames);
+        StringBuilder responseText = new StringBuilder();
+        var response = new SendMessage();
+        while (matcher.find()) {
+            String username = matcher.group(1).trim();
+            var member = memberRepository.findByUsername(username);
+            if (member.isEmpty()) {
+                responseText.append("⚠️ Member with username: @").append(username).append(" didn't start the bot yet!").append("\n");
+                continue;
+            }
+            if (!team.getMembers().contains(member.get())) {
+                responseText.append("⚠️ @").append(username).append(" already isn't added to this team!").append("\n");
+                continue;
+            }
+            team.getMembers().remove(member.get());
+            member.get().getTeams().remove(team);
+            teamRepository.save(team);
+            responseText.append("✅ Success to remove @").append(username).append("\n");
+        }
+        response.setText(responseText.toString());
+        return response;
+    }
 }

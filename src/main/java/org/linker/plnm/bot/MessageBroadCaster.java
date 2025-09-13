@@ -2,26 +2,17 @@ package org.linker.plnm.bot;
 
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
-import org.linker.plnm.repositories.ChatGroupRepository;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MessageBroadCaster {
-
-    private final ChatGroupRepository chatGroupRepository;
-
-    public MessageBroadCaster(ChatGroupRepository chatGroupRepository) {
-        this.chatGroupRepository = chatGroupRepository;
-    }
 
     /// Broadcast message to team members
     public List<BotApiMethodMessage> sendMessageToTeamMembers(Team team, Message broadCastMessage) {
@@ -59,37 +50,24 @@ public class MessageBroadCaster {
         return messagesToSend;
     }
 
-
-    private SendMessage sendMessageToSuperGroupMember(
-            Message broadCastMessage, long groupChatId,
+    private SendMessage sendMessageToSuperGroupMember(Message broadCastMessage, long groupChatId,
             int messageId, Team team, Member member) throws TelegramApiException {
         String link = "https://t.me/c/" + String.valueOf(groupChatId).substring(4) + "/" + messageId;
         String text = "💬 New message in *" + team.getName() + "* team at *" +
                 broadCastMessage.getChat().getTitle() + "*:\n\n" +
                 broadCastMessage.getText().replace("~!" + team.getName(), "") + "\n\n" +
                 "👉 [Jump to message](" + link + ")";
-        SendMessage privateMessage = new SendMessage();
-        privateMessage.setChatId(member.getTelegramId().toString());
-        privateMessage.setText(text);
-        privateMessage.setParseMode("Markdown");
-        return privateMessage;
+        return MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown");
     }
 
     private List<BotApiMethodMessage> sendMessageToNormalGroupMember(
-            Message broadCastMessage, long groupChatId,
-            int messageId, Team team, Member member) throws TelegramApiException {
-        List<BotApiMethodMessage> messagesToSend = new ArrayList<>();
-        SendMessage header = new SendMessage();
-        header.setChatId(member.getTelegramId().toString());
-        header.setText("💬 New message in *" + team.getName() + "* team at *" + broadCastMessage.getChat().getTitle() + "*");
-        header.setParseMode("Markdown");
-        messagesToSend.add(header);
-        ForwardMessage forward = new ForwardMessage();
-        forward.setChatId(member.getTelegramId().toString());
-        forward.setFromChatId(String.valueOf(groupChatId));
-        forward.setMessageId(messageId);
-        messagesToSend.add(forward);
-        return messagesToSend;
+        Message broadCastMessage, long groupChatId,
+        int messageId, Team team, Member member) throws TelegramApiException {
+        String text = "💬 New message in *" + team.getName() + "* team at *" + broadCastMessage.getChat().getTitle() + "*";
+        return new ArrayList<>(List.of(
+                MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown"),
+                MessageBuilder.buildForwardMessage(member.getTelegramId(), groupChatId, messageId)
+        ));
     }
 
 }
