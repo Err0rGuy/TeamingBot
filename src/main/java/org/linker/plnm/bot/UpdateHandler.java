@@ -49,13 +49,15 @@ public class UpdateHandler {
 
     private static final String CMD_REMOVE_MEMBER = "/remove_member";
 
-    private static final String ADMIN = "admin";
+    private static final String ADMIN = "administrator";
 
     private static final String CREATOR = "creator";
 
-    private final List<String> teamingCommands;
+    private final List<String> noNeedPrivilegesCommands;
 
-    private final List<String> pendingCommands;
+    private final List<String> textCommands;
+
+    private final List<String> callbackCommands;
 
     public UpdateHandler(
             Operations operations,
@@ -67,29 +69,39 @@ public class UpdateHandler {
         this.broadCaster = broadCaster;
         this.teamRepository = teamRepository;
         this.chatGroupRepository = chatGroupRepository;
-        teamingCommands = List.of(CMD_CREATE_TEAM, CMD_EDIT_TEAM,
-                CMD_REMOVE_TEAM, CMD_SHOW_TEAMS);
-        pendingCommands = List.of(CMD_REMOVE_TEAM, CMD_ADD_MEMBER, CMD_REMOVE_MEMBER);
+        noNeedPrivilegesCommands = List.of(CMD_SHOW_TEAMS, CMD_START, CMD_HINT);
+        callbackCommands = List.of(CMD_ADD_MEMBER, CMD_REMOVE_MEMBER, CMD_RENAME_TEAM, CMD_HINT);
+        textCommands = List.of(CMD_START, CMD_CREATE_TEAM, CMD_EDIT_TEAM, CMD_REMOVE_TEAM, CMD_SHOW_TEAMS, CMD_HINT);
     }
 
     /// Handling message updates
-    public Optional<SendMessage> messageUpdateHandler(Message message, String text, long chatId, long userId) {
+    public Optional<SendMessage> textUpdateHandler(Message message) {
+        var text = message.getText();
+        var chatId = message.getChatId();
+        var userId = message.getFrom().getId();
         Pattern pattern = Pattern.compile("#(\\w+)");
-        Matcher matcher = pattern.matcher(text);
         Optional<SendMessage> response = Optional.empty();
-
-        if (matcher.find())
-            findingBroadCastMessages(matcher, chatId, message);
-
-        else if (text.equals(CMD_START))
-            response = Optional.of(operations.onBotStart(chatId));
-
+        var command = text.split(" ", 2)[0].trim();
+        if (pattern.matcher(command).find()) {
+            findingBroadCastMessages(pattern.matcher(command), chatId, message);
+        }
         else {
-            for(String command : teamingCommands)
-                if (command.contains(text) && isUserAdmin(chatId, userId)) {
-                    response = Optional.of(teamingCommands(message, chatId, text));
-                    break;
-                }
+            if (noNeedPrivilegesCommands.contains(command) || isUserAdmin(chatId, userId))
+                response = operationHandler(message, chatId, text);
+        }
+        return response;
+    }
+
+    /// Handling callback query updates
+    public Optional<SendMessage> callBackUpdateHandler(Message message) {
+        var text = message.getText();
+        var chatId = message.getChatId();
+        var userId = message.getFrom().getId();
+        Optional<SendMessage> response = Optional.empty();
+        var command = text.split(" ", 2)[0].trim();
+        if(callbackCommands.contains(command)) {
+            if (noNeedPrivilegesCommands.contains(command) || isUserAdmin(chatId, userId))
+                response = operationHandler(message, chatId, text);
         }
         return response;
     }
@@ -102,8 +114,8 @@ public class UpdateHandler {
             if (chatGroup.isEmpty())
                 break;
             Optional<Team> team = teamRepository.findTeamByNameAndChatGroup(teamName, chatGroup.get());
-            team.ifPresent(value -> {
-                List<BotApiMethodMessage>messages = broadCaster.sendMessageToTeamMembers(value, message);
+            team.ifPresent(teamToCall -> {
+                List<BotApiMethodMessage>messages = broadCaster.sendMessageToTeamMembers(teamToCall, message);
                 for(BotApiMethodMessage msg : messages) {
                     try {
                         sender.execute(msg);
@@ -115,43 +127,30 @@ public class UpdateHandler {
         }
     }
 
-    /// Handling callback query updates
-    public Optional<SendMessage> callBackUpdateHandler(Message message, String text, long chatId, long userId) {
-        Optional<SendMessage> response = Optional.empty();
-        if (text.equals(CMD_HINT))
-            response = Optional.of(operations.hintMessage(chatId));
-        for(String command : pendingCommands)
-            if (command.contains(text) && isUserAdmin(chatId, userId)) {
-                response = Optional.of(teamingCommands(message, chatId, text));
-                break;
-            }
-        return response;
-    }
-
     /// Teaming operations updates
-    private SendMessage teamingCommands(Message message, Long chatId, String text) {
-        SendMessage response = new SendMessage();
+    private Optional<SendMessage> operationHandler(Message message, Long chatId, String text) {
+        SendMessage response;
         String teamName;
         String command;
         String[] parts = text.split(" ", 2);
         command = parts[0].trim();
         teamName = (parts.length > 1) ? parts[1].trim() : null;
-
-        if (!message.getChat().isGroupChat()) {
-            response.setText("⚠️ You can only do this inside a group chat!");
-            return response;
-        }
         switch (command) {
-            case CMD_CREATE_TEAM  -> response = operations.createTeam(chatId, teamName);
+            case CMD_START -> response = operations.onBotStart(message);
+            case CMD_HINT -> response = operations.hintMessage(chatId);
+            case CMD_CREATE_TEAM  -> response = operations.createTeam(chatId, message.getChat().getTitle(), teamName);
             case CMD_REMOVE_TEAM -> response = operations.removeTeam(chatId, teamName);
             case CMD_EDIT_TEAM -> response = operations.editTeam(chatId, teamName);
             case CMD_SHOW_TEAMS -> response = operations.showTeams(chatId);
-            case CMD_RENAME_TEAM -> response = operations.pendingForRenameTeam(chatId, teamName);
-            case CMD_ADD_MEMBER -> response = operations.pendingForAddMember(chatId, teamName);
-            case CMD_REMOVE_MEMBER -> response = operations.pendingForRemoveMember(chatId, teamName);
-            default -> response = operations.doOperation(chatId, command, message);
+            case CMD_RENAME_TEAM -> response = operations.addToPendingOps(chatId, teamName, CMD_RENAME_TEAM, "new name");
+            case CMD_ADD_MEMBER -> response = operations.addToPendingOps(chatId, teamName, CMD_ADD_MEMBER, "username");
+            case CMD_REMOVE_MEMBER -> response = operations.addToPendingOps(chatId, teamName, CMD_REMOVE_MEMBER, "username");
+            default -> response = operations.performPendingOps(chatId, text);
         }
-        return response;
+        if (response == null)
+            return Optional.empty();
+        response.setChatId(chatId);
+        return Optional.of(response);
     }
 
     /// Checking if user is admin
