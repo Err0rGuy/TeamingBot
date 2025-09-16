@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=postgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  main:
+    banner-mode: off
+  data:
+    jdbc:
+      dialect: h2
+bot:
+  token:
+
+telegram:
+  test-chat-id: -4882228312
+  privileged-user:
+      id: 275678873
+      firstname: Sadra
+      lastname:
+      username: SadraIzady
+
+  unprivileged-user:
+    id: 7284916634
+    firstname: Err0r
+    lastname: Guy
+    username: Err0rGuy
