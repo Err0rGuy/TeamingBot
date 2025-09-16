@@ -3,6 +3,7 @@ package org.linker.plnm.bot;
 import jakarta.annotation.PostConstruct;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.configuration.BotSettings;
+import org.springframework.context.annotation.Profile;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -14,6 +15,8 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import java.util.Optional;
 
 
+@Profile("!test")
+
 public class Bot extends TelegramLongPollingBot {
 
     private final UpdateHandler updateHandler;
@@ -22,11 +25,12 @@ public class Bot extends TelegramLongPollingBot {
 
 
     public Bot(
+            // default bot options contains proxy settings
             DefaultBotOptions options,
             BotSettings botSettings,
             UpdateHandler updateHandler
     ) {
-        super(options, botSettings.getToken()); // default bot options contains proxy settings
+        super(options, botSettings.getToken());
         this.botSettings = botSettings;
         this.updateHandler = updateHandler;
     }

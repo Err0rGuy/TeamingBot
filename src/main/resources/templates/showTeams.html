@@ -1,0 +1,11 @@
+<b>Teams:</b>
+
+<th:block th:each="team, iterStat : ${teams}">
+ <b th:text="${iterStat.count} + ' -> ' + ${team.name}"></b>
+ <th:block th:if="${#lists.isEmpty(team.members)}">
+  • No members in this team!
+ </th:block>
+ <th:block th:each="member : ${team.members}">
+  • <b th:text="${member.displayName}"></b>
+ </th:block>
+</th:block>

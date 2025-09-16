@@ -29,5 +29,4 @@ public class BeansConfig {
         else
             return new Bot(botSettings, updateHandler);
     }
-
 }
