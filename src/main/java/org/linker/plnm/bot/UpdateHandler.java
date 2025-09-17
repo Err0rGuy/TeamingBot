@@ -2,6 +2,7 @@ package org.linker.plnm.bot;
 import lombok.Setter;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Team;
+import org.linker.plnm.enums.BotCommands;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
@@ -53,12 +54,6 @@ public class UpdateHandler {
 
     private static final String CREATOR = "creator";
 
-    private final List<String> noNeedPrivilegesCommands;
-
-    private final List<String> textCommands;
-
-    private final List<String> callbackCommands;
-
     public UpdateHandler(
             Operations operations,
             MessageBroadCaster broadCaster,
@@ -69,9 +64,6 @@ public class UpdateHandler {
         this.broadCaster = broadCaster;
         this.teamRepository = teamRepository;
         this.chatGroupRepository = chatGroupRepository;
-        noNeedPrivilegesCommands = List.of(CMD_SHOW_TEAMS, CMD_START, CMD_HINT);
-        callbackCommands = List.of(CMD_ADD_MEMBER, CMD_REMOVE_MEMBER, CMD_RENAME_TEAM, CMD_HINT);
-        textCommands = List.of(CMD_START, CMD_CREATE_TEAM, CMD_EDIT_TEAM, CMD_REMOVE_TEAM, CMD_SHOW_TEAMS, CMD_HINT);
     }
 
     /// Handling message updates
@@ -86,7 +78,7 @@ public class UpdateHandler {
             findingBroadCastMessages(pattern.matcher(command), chatId, message);
         }
         else {
-            if (noNeedPrivilegesCommands.contains(command) || isUserAdmin(chatId, userId))
+            if (BotCommands.isUnPrivileged(command) || isUserAdmin(chatId, userId))
                 response = operationHandler(message, chatId, text);
         }
         return response;
@@ -99,8 +91,8 @@ public class UpdateHandler {
         var userId = message.getFrom().getId();
         Optional<SendMessage> response = Optional.empty();
         var command = text.split(" ", 2)[0].trim();
-        if(callbackCommands.contains(command)) {
-            if (noNeedPrivilegesCommands.contains(command) || isUserAdmin(chatId, userId))
+        if(BotCommands.isCallback(command)) {
+            if (BotCommands.isUnPrivileged(command) || isUserAdmin(chatId, userId))
                 response = operationHandler(message, chatId, text);
         }
         return response;
