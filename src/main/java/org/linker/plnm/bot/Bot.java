@@ -3,6 +3,7 @@ package org.linker.plnm.bot;
 import jakarta.annotation.PostConstruct;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.configuration.BotSettings;
+import org.linker.plnm.enums.BotCommands;
 import org.springframework.context.annotation.Profile;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -68,19 +69,17 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(@NotNull Update update) {
         Optional<SendMessage> response;
         Message message = null;
-        var isCallback = false;
 
         if (update.hasMessage() && update.getMessage().hasText())
             message = update.getMessage();
         else if (update.hasCallbackQuery()) {
-            isCallback = true;
             message = update.getCallbackQuery().getMessage();
             message.setText(update.getCallbackQuery().getData());
             message.setFrom(update.getCallbackQuery().getFrom());
         }
         if (message == null || !message.hasText())
             return;
-        if (isCallback)
+        if (BotCommands.isCallback(message.getText()))
             response = updateHandler.callBackUpdateHandler(message);
         else
             response = updateHandler.textUpdateHandler(message);

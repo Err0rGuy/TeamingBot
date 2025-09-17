@@ -1,4 +1,4 @@
-package org.linker.plnm.bot;
+package org.linker.plnm.enums;
 
 
 import org.linker.plnm.utilities.IOUtilities;
