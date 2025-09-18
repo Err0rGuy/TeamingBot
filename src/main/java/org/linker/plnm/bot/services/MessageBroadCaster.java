@@ -1,8 +1,9 @@
-package org.linker.plnm.bot;
+package org.linker.plnm.bot.services;
 
+import org.linker.plnm.bot.messageUtilities.MessageBuilder;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
-import org.linker.plnm.enums.BotMessages;
+import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
@@ -53,11 +54,11 @@ public class MessageBroadCaster {
             try {
                 if (isSuperGroup)
                     messagesToSend.add(
-                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, "all", member)
+                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, "global", member)
                     );
                 else
                     messagesToSend.addAll(
-                            sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, "all", member)
+                            sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, "global", member)
                     );
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
@@ -71,7 +72,7 @@ public class MessageBroadCaster {
                 Message broadCastMessage, long groupChatId,
                 int messageId, String teamName, Member member) throws TelegramApiException {
         String link = "https://t.me/c/" + String.valueOf(groupChatId).substring(4) + "/" + messageId;
-        String text = BotMessages.SUPER_GROUP_BROADCAST_MESSAGE.format(
+        String text = BotMessage.SUPER_GROUP_BROADCAST_MESSAGE.format(
                 teamName, broadCastMessage.getChat().getTitle(),
                 broadCastMessage.getText().replace("#" + teamName, "") + "\n\n", link
         );
@@ -81,7 +82,7 @@ public class MessageBroadCaster {
     private List<BotApiMethodMessage> sendMessageToNormalGroupMembers(
         Message broadCastMessage, long groupChatId,
         int messageId, String teamName, Member member) throws TelegramApiException {
-        String text = BotMessages.NORMAL_GROUP_BROADCAST_MESSAGE.format(teamName, broadCastMessage.getChat().getTitle());
+        String text = BotMessage.NORMAL_GROUP_BROADCAST_MESSAGE.format(teamName, broadCastMessage.getChat().getTitle());
         return new ArrayList<>(List.of(
                 MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown"),
                 MessageBuilder.buildForwardMessage(member.getTelegramId(), groupChatId, messageId)

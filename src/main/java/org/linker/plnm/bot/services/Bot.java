@@ -1,10 +1,9 @@
-package org.linker.plnm.bot;
+package org.linker.plnm.bot.services;
 
 import jakarta.annotation.PostConstruct;
 import org.jetbrains.annotations.NotNull;
-import org.linker.plnm.configuration.BotSettings;
-import org.linker.plnm.enums.BotCommands;
-import org.springframework.context.annotation.Profile;
+import org.linker.plnm.bot.settings.BotSettings;
+import org.linker.plnm.enums.BotCommand;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -14,13 +13,17 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-@Profile("!test")
+
 public class Bot extends TelegramLongPollingBot {
 
     private final UpdateHandler updateHandler;
 
     private final BotSettings botSettings;
+
+    private ExecutorService executorService;
 
 
     public Bot(DefaultBotOptions options, BotSettings botSettings, UpdateHandler updateHandler) {
@@ -46,6 +49,9 @@ public class Bot extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
         updateHandler.setSender(this);
+        executorService = Executors.newFixedThreadPool(
+          Runtime.getRuntime().availableProcessors() * 2
+        );
     }
 
 
@@ -57,6 +63,11 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(@NotNull Update update) {
+        executorService.submit(() -> processUpdate(update));
+    }
+
+    /// Processing received update
+    private void processUpdate(@NotNull Update update) {
         SendMessage response;
         Message message = null;
 
@@ -70,18 +81,19 @@ public class Bot extends TelegramLongPollingBot {
         if (message == null || !message.hasText())
             return;
 
-        String[] parts = message.getText().split(" ", 2);
+        String text = message.getText();
+        String[] parts = text.split(" ");
         String command = parts[0];
         String argument = (parts.length > 1) ? parts[1] : null;
         long chatId = message.getChatId();
         long userId = message.getFrom().getId();
 
-        if (update.hasCallbackQuery() && BotCommands.isCallback(command))
+        if (update.hasCallbackQuery() && BotCommand.isCallback(command))
             response = updateHandler.callBackUpdateHandler(command, argument, chatId, userId);
-        else if(BotCommands.isText(command))
-            response = updateHandler.commandUpdateHandler(message, command, argument, chatId, userId);
+        else if(BotCommand.isText(command))
+            response = updateHandler.commandUpdateHandler(message, command, argument,chatId, userId);
         else
-            response = updateHandler.argumentUpdateHandler(message, message.getText(), chatId);
+            response = updateHandler.argumentUpdateHandler(message, text, chatId, userId);
 
         if (response == null || response.getText().isEmpty())
             return;

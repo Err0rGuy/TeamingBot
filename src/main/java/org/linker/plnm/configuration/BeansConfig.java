@@ -1,7 +1,8 @@
 package org.linker.plnm.configuration;
 
-import org.linker.plnm.bot.Bot;
-import org.linker.plnm.bot.UpdateHandler;
+import org.linker.plnm.bot.services.Bot;
+import org.linker.plnm.bot.settings.BotSettings;
+import org.linker.plnm.bot.services.UpdateHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
