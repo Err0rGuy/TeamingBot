@@ -10,8 +10,6 @@ spring:
   data:
     jdbc:
       dialect: h2
-bot:
-  token:
 
 telegram:
   test-chat-id: -4882228312

@@ -3,9 +3,11 @@ package org.linker.plnm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.linker.plnm.bot.Bot;
-import org.linker.plnm.bot.UpdateHandler;
-import org.linker.plnm.configuration.BotSettings;
+import org.linker.plnm.bot.services.Bot;
+import org.linker.plnm.bot.services.UpdateHandler;
+import org.linker.plnm.bot.settings.BotSettings;
+import org.linker.plnm.entities.Member;
+import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.utilities.IOUtilities;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +35,8 @@ class BotPrivilegedCommandsTest {
 
     private final Environment environment;
 
+    private final MemberRepository memberRepository;
+
     private User adminUser;
 
     private User normalUser;
@@ -43,9 +48,11 @@ class BotPrivilegedCommandsTest {
     private Update update;
 
     @Autowired
-    public BotPrivilegedCommandsTest(BotSettings botSettings, UpdateHandler updateHandler, Environment environment) {
+    public BotPrivilegedCommandsTest(BotSettings botSettings, UpdateHandler updateHandler, Environment environment, MemberRepository memberRepository) {
         this.environment = environment;
+        this.memberRepository = memberRepository;
         this.bot = spy(new Bot(botSettings, updateHandler));
+        bot.init();
     }
 
     @BeforeEach
@@ -68,9 +75,11 @@ class BotPrivilegedCommandsTest {
         chat.setId(Long.valueOf(Objects.requireNonNull(environment.getProperty("telegram.test-chat-id"))));
 
         message = new Message();
+        message.setMessageId(123);
         message.setChat(chat);
 
         update = new Update();
+        update.setUpdateId(123);
         update.setMessage(message);
     }
 
@@ -79,13 +88,20 @@ class BotPrivilegedCommandsTest {
     void testStartCommandReturnsCorrectResponse() throws Exception {
         update.getMessage().setText("/start");
         update.getMessage().setFrom(adminUser);
+
         bot.onUpdateReceived(update);
+
         ArgumentCaptor<SendMessage> captor = ArgumentCaptor.forClass(SendMessage.class);
-        verify(bot).execute(captor.capture());
-        SendMessage response = captor.getValue();
-        assertThat(response.getText()).isEqualTo(
-            IOUtilities.readFile("static/botStart.html")
-        );
+        verify(bot, atLeastOnce()).execute(captor.capture());
+        SendMessage response = captor.getAllValues()
+                .stream()
+                .filter(msg -> msg instanceof SendMessage)
+                .map(SendMessage.class::cast)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(response.getText())
+                .isEqualTo(IOUtilities.readFile("static/botStart.html"));
     }
 
     @Test
@@ -97,7 +113,7 @@ class BotPrivilegedCommandsTest {
         verify(bot).execute(captor.capture());
         SendMessage response = captor.getValue();
         assertThat(response.getText()).isEqualTo(
-                IOUtilities.readFile("static/botStart.html")
+                IOUtilities.readFile("static/botHint.html")
         );
     }
 

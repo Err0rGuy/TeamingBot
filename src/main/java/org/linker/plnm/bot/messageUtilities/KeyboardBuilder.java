@@ -1,4 +1,4 @@
-package org.linker.plnm.bot;
+package org.linker.plnm.bot.messageUtilities;
 
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
