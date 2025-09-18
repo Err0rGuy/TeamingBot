@@ -12,14 +12,22 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
-    boolean existsByNameAndChatGroup(String name, ChatGroup group);
+    boolean existsByNameAndChatGroupChatId(String name, Long chatGroupChatId);
+
+    @Query("""
+    SELECT CASE WHEN COUNT(m) > 0 THEN TRUE ELSE FALSE END
+    FROM Team t
+    JOIN t.members m
+    JOIN t.chatGroup g
+    WHERE t.name = :name AND g.chatId = :chatId
+    """)
+    boolean teamHasMember(@Param("name") String name, @Param("chatId") Long chatGroupChatId);
 
     @Transactional
-    void deleteTeamByNameAndChatGroup(String name, ChatGroup group);
+    void deleteTeamByNameAndChatGroupChatId(String name, Long chatGroupChatId);
 
-    // ✅ Fetch teams WITH members in one query
-    @Query("SELECT DISTINCT t FROM Team t LEFT JOIN FETCH t.members WHERE t.chatGroup = :chatGroup")
-    List<Team> findTeamByChatGroup(@Param("chatGroup") ChatGroup chatGroup);
+    List<Team> findTeamByChatGroupChatId(Long chatGroupChatId);
 
-    Optional<Team> findTeamByNameAndChatGroup(String name, ChatGroup chatGroup);
+    Optional<Team> findTeamByNameAndChatGroupChatId(String name, Long chatGroupChatId);
+
 }

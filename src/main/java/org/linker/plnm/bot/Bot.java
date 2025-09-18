@@ -13,11 +13,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import java.util.Optional;
 
 
 @Profile("!test")
-
 public class Bot extends TelegramLongPollingBot {
 
     private final UpdateHandler updateHandler;
@@ -25,22 +23,14 @@ public class Bot extends TelegramLongPollingBot {
     private final BotSettings botSettings;
 
 
-    public Bot(
-            // default bot options contains proxy settings
-            DefaultBotOptions options,
-            BotSettings botSettings,
-            UpdateHandler updateHandler
-    ) {
+    public Bot(DefaultBotOptions options, BotSettings botSettings, UpdateHandler updateHandler) {
         super(options, botSettings.getToken());
         this.botSettings = botSettings;
         this.updateHandler = updateHandler;
     }
 
 
-    public Bot(
-            BotSettings botSettings,
-            UpdateHandler updateHandler
-    ) {
+    public Bot(BotSettings botSettings, UpdateHandler updateHandler) {
         super(botSettings.getToken());
         this.botSettings = botSettings;
         this.updateHandler = updateHandler;
@@ -67,7 +57,7 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(@NotNull Update update) {
-        Optional<SendMessage> response;
+        SendMessage response;
         Message message = null;
 
         if (update.hasMessage() && update.getMessage().hasText())
@@ -79,21 +69,27 @@ public class Bot extends TelegramLongPollingBot {
         }
         if (message == null || !message.hasText())
             return;
-        if (BotCommands.isCallback(message.getText()))
-            response = updateHandler.callBackUpdateHandler(message);
+
+        String[] parts = message.getText().split(" ", 2);
+        String command = parts[0];
+        String argument = (parts.length > 1) ? parts[1] : null;
+        long chatId = message.getChatId();
+        long userId = message.getFrom().getId();
+
+        if (update.hasCallbackQuery() && BotCommands.isCallback(command))
+            response = updateHandler.callBackUpdateHandler(command, argument, chatId, userId);
+        else if(BotCommands.isText(command))
+            response = updateHandler.commandUpdateHandler(message, command, argument, chatId, userId);
         else
-            response = updateHandler.textUpdateHandler(message);
+            response = updateHandler.argumentUpdateHandler(message, message.getText(), chatId);
 
-
-        if (response.isPresent()) {
-            var text = response.get().getText();
-            if (text == null || text.isEmpty())
-                return;
-            try {
-                execute(response.get());
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
+        if (response == null || response.getText().isEmpty())
+            return;
+        response.setChatId(message.getChatId());
+        try {
+            execute(response);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
     }
 }
