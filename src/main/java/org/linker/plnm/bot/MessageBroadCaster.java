@@ -2,17 +2,24 @@ package org.linker.plnm.bot;
 
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
+import org.linker.plnm.enums.BotMessages;
+import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MessageBroadCaster {
+
+    private final MemberRepository memberRepository;
+
+    public MessageBroadCaster(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
 
     /// Broadcast message to team members
     public List<BotApiMethodMessage> sendMessageToTeamMembers(Team team, Message broadCastMessage) {
@@ -20,54 +27,64 @@ public class MessageBroadCaster {
         long groupChatId = broadCastMessage.getChatId();
         int messageId = broadCastMessage.getMessageId();
         boolean isSuperGroup = broadCastMessage.getChat().isSuperGroupChat();
-        List<String> failedUsers = new ArrayList<>();
-
-        for (Member member : team.getMembers()) {
-            try {
-                if (isSuperGroup)
+        try {
+            if (isSuperGroup)
+                for (Member member : team.getMembers())
                     messagesToSend.add(
-                            sendMessageToSuperGroupMember(broadCastMessage, groupChatId, messageId, team, member)
+                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, team.getName(), member)
                     );
-                else
-                    messagesToSend.addAll(
-                            sendMessageToNormalGroupMember(broadCastMessage, groupChatId, messageId, team, member)
-                    );
-            } catch (TelegramApiRequestException e) {
-                if (e.getApiResponse() != null &&
-                        e.getApiResponse().contains("bot can't initiate conversation with a user"))
-                    failedUsers.add(member.getDisplayName());
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (!failedUsers.isEmpty()) {
-            StringBuilder warnText = new StringBuilder("⚠️ The following users have not started the bot and did not receive the message:\n");
-            for (String u : failedUsers) {
-                warnText.append(" - ").append(u).append("\n");
-            }
-            messagesToSend.add(MessageBuilder.buildMessage(groupChatId, warnText.toString(), broadCastMessage.getMessageId()));
+            else for(Member member : team.getMembers())
+                messagesToSend.addAll(
+                        sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, team.getName(), member)
+                );
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
         }
         return messagesToSend;
     }
 
-    private SendMessage sendMessageToSuperGroupMember(Message broadCastMessage, long groupChatId,
-            int messageId, Team team, Member member) throws TelegramApiException {
+    /// Broadcast message to all group members
+    public List<BotApiMethodMessage> sendMessageToAllMembers(Message broadCastMessage) {
+        List<BotApiMethodMessage> messagesToSend = new ArrayList<>();
+        long groupChatId = broadCastMessage.getChatId();
+        int messageId = broadCastMessage.getMessageId();
+        boolean isSuperGroup = broadCastMessage.getChat().isSuperGroupChat();
+        for (Member member : memberRepository.findAll()) {
+            try {
+                if (isSuperGroup)
+                    messagesToSend.add(
+                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, "all", member)
+                    );
+                else
+                    messagesToSend.addAll(
+                            sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, "all", member)
+                    );
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return messagesToSend;
+    }
+
+
+    private SendMessage sendMessageToSuperGroupMembers(
+                Message broadCastMessage, long groupChatId,
+                int messageId, String teamName, Member member) throws TelegramApiException {
         String link = "https://t.me/c/" + String.valueOf(groupChatId).substring(4) + "/" + messageId;
-        String text = "💬 New message in *" + team.getName() + "* team at *" +
-                broadCastMessage.getChat().getTitle() + "*:\n\n" +
-                broadCastMessage.getText().replace("~!" + team.getName(), "") + "\n\n" +
-                "👉 [Jump to message](" + link + ")";
+        String text = BotMessages.SUPER_GROUP_BROADCAST_MESSAGE.format(
+                teamName, broadCastMessage.getChat().getTitle(),
+                broadCastMessage.getText().replace("#" + teamName, "") + "\n\n", link
+        );
         return MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown");
     }
 
-    private List<BotApiMethodMessage> sendMessageToNormalGroupMember(
+    private List<BotApiMethodMessage> sendMessageToNormalGroupMembers(
         Message broadCastMessage, long groupChatId,
-        int messageId, Team team, Member member) throws TelegramApiException {
-        String text = "💬 New message in *" + team.getName() + "* team at *" + broadCastMessage.getChat().getTitle() + "*";
+        int messageId, String teamName, Member member) throws TelegramApiException {
+        String text = BotMessages.NORMAL_GROUP_BROADCAST_MESSAGE.format(teamName, broadCastMessage.getChat().getTitle());
         return new ArrayList<>(List.of(
                 MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown"),
                 MessageBuilder.buildForwardMessage(member.getTelegramId(), groupChatId, messageId)
         ));
     }
-
 }

@@ -2,13 +2,16 @@ package org.linker.plnm.bot;
 
 import com.vdurmont.emoji.EmojiParser;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Team;
+import org.linker.plnm.enums.BotCommands;
 import org.linker.plnm.enums.BotMessages;
 import org.linker.plnm.mappers.TelegramUserMapper;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
+import org.linker.plnm.utilities.CacheUtilities;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,9 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,29 +29,28 @@ public class Operations {
 
     private final TemplateEngine renderEngine;
 
+    private final CacheUtilities<String, String> cacheUtilities;
+
     private final TeamRepository teamRepository;
 
     private final MemberRepository memberRepository;
 
     private final ChatGroupRepository chatGroupRepository;
 
-
-    private final Map<String, HashMap<Long, String>> pendingOperations = new ConcurrentHashMap<>();
-
     public Operations(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            TemplateEngine renderEngine
+            TemplateEngine renderEngine, CacheUtilities<String, String> cacheUtilities
     ) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
+        this.cacheUtilities = cacheUtilities;
     }
 
-
-    /// Bot start action
+    @Nullable /// Bot start action
     public SendMessage onBotStart(Message message) {
         var optMember = TelegramUserMapper.mapToMember(message.getFrom());
         if (optMember.isEmpty())
@@ -59,14 +59,14 @@ public class Operations {
         if (!memberRepository.existsById(member.getTelegramId()))
             memberRepository.save(member);
         InlineKeyboardButton button = KeyboardBuilder.buildButton(
-                EmojiParser.parseToUnicode("\uD83D\uDCA1Hint..."), "/hint"
+                EmojiParser.parseToUnicode("\uD83D\uDCA1Hint..."), BotCommands.HINT.str()
         );
         List<InlineKeyboardButton> row = new ArrayList<>(List.of(button));
         List<List<InlineKeyboardButton>> rows = new ArrayList<>(List.of(row));
         var keyboard = new InlineKeyboardMarkup();
         keyboard.setKeyboard(rows);
         SendMessage sendMessage = MessageBuilder.buildMessage(
-                member.getTelegramId(), BotMessages.START_RESPONSE.format(), "HTML"
+                message.getChatId(), BotMessages.START_RESPONSE.format(), "HTML"
         );
         sendMessage.setReplyMarkup(keyboard);
         return sendMessage;
@@ -87,7 +87,7 @@ public class Operations {
         }
         group = chatGroupRepository.findByChatId(chatId)
                 .orElseGet(() -> chatGroupRepository.save(new ChatGroup(chatId, groupName)));
-        if (teamRepository.existsByNameAndChatGroup(teamName, group)) {
+        if (teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
             response.setText(BotMessages.TEAM_ALREADY_EXISTS.format(teamName));
             return response;
         }
@@ -102,14 +102,12 @@ public class Operations {
     /// Removing an existing team
     public SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        Optional<ChatGroup> group;
         if (teamName == null) {
             response.setText(BotMessages.REMOVE_TEAM_NO_ARG.format());
             return response;
         }
-        group = chatGroupRepository.findByChatId(chatId);
-        if (group.isPresent() && teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
-            teamRepository.deleteTeamByNameAndChatGroup(teamName, group.get());
+        if (teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
+            teamRepository.deleteTeamByNameAndChatGroupChatId(teamName, chatId);
             response.setText(BotMessages.TEAM_REMOVED.format(teamName));
         } else
             response.setText(BotMessages.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -120,12 +118,7 @@ public class Operations {
     @Transactional(readOnly = true)
     public SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
-        Optional<ChatGroup> group = chatGroupRepository.findByChatId(chatId);
-        if (group.isEmpty()) {
-            response.setText(BotMessages.NO_TEAM_FOUND.format());
-            return response;
-        }
-        var teams = teamRepository.findTeamByChatGroup(group.get());
+        var teams = teamRepository.findTeamByChatGroupChatId(chatId);
         if (teams.isEmpty()) {
             response.setText(BotMessages.NO_TEAM_FOUND.format());
             return response;
@@ -144,18 +137,17 @@ public class Operations {
             response.setText(BotMessages.EDIT_TEAM_NO_ARG.format());
             return response;
         }
-        var group = chatGroupRepository.findByChatId(chatId);
-        if (group.isEmpty() || !teamRepository.existsByNameAndChatGroup(teamName, group.get())) {
+        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
             response.setText(BotMessages.TEAM_DOES_NOT_EXISTS.format(teamName));
             return response;
         }
-        var operation = new HashMap<Long, String>();
-        operation.put(chatId, null);
-        pendingOperations.put(teamName, operation);
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        var renameTeamButton = KeyboardBuilder.buildButton("Rename Team", "/rename_team " + teamName);
-        var addMemberButton = KeyboardBuilder.buildButton("Add Member", "/add_member " + teamName);
-        var removeMemberButton = KeyboardBuilder.buildButton("Remove Member", "/remove_member " + teamName);
+        var renameTeamButton = KeyboardBuilder.buildButton(
+                "Rename Team", BotCommands.RENAME_TEAM.str() + " " + teamName);
+        var addMemberButton = KeyboardBuilder.buildButton(
+                "Add Member", BotCommands.ADD_MEMBER.str() + " " + teamName);
+        var removeMemberButton = KeyboardBuilder.buildButton(
+                "Remove Member", BotCommands.REMOVE_MEMBER.str() + " " + teamName);
         keyboard.add(List.of(renameTeamButton));
         keyboard.add(List.of(addMemberButton));
         keyboard.add(List.of(removeMemberButton));
@@ -163,65 +155,64 @@ public class Operations {
                 .keyboard(keyboard)
                 .build();
         response.setReplyMarkup(inlineKeyboard);
-        response.setText("What do you want to do?");
+        response.setText(BotMessages.ASK_FOR_EDIT_OPTIONS.format(teamName));
         return response;
     }
 
     /// Adding operation to pending list
-    public SendMessage addToPendingOps(Long chatId, String teamName, String operation, String argName) {
+    public SendMessage cachingOperation(Long chatId, String teamName, String operation, String argName) {
         SendMessage response = new SendMessage();
-        if (pendingOperations.containsKey(teamName))
-            pendingOperations.get(teamName).put(chatId, operation);
-        else {
-            response.setText(BotMessages.EXPIRED_OPERATION.format());
+        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
+            response.setText(BotMessages.TEAM_DOES_NOT_EXISTS.format(teamName));
             return response;
         }
+        if(operation.equals(BotCommands.REMOVE_MEMBER.str()) && !teamRepository.teamHasMember(teamName, chatId)){
+            response.setText(BotMessages.TEAM_HAS_NO_MEMBER.format(teamName));
+            return response;
+        }
+        Map<String, String> toBeSavedOperation = new HashMap<>();
+        toBeSavedOperation.put(teamName, operation);
+        cacheUtilities.put(chatId.toString(), toBeSavedOperation);
         response.setText(BotMessages.ASK_FOR_ARG.format(argName));
         return response;
     }
 
-    /// Pending operation execution
     @Transactional
-    public SendMessage performPendingOps(long chatId, String value) {
+    public SendMessage performCachedOperation(Long chatId, String value) {
         SendMessage response = new SendMessage();
-        String pendingTeam = "";
-        String operation = "";
-        HashMap<Long, String> innerMap;
-        for (String teamName : pendingOperations.keySet()) {
-            innerMap = pendingOperations.get(teamName);
-            if (innerMap.containsKey(chatId)) {
-                pendingTeam = teamName;
-                operation = innerMap.get(chatId);
-                break;
-            }
-        }
+        String key = chatId.toString();
 
-        Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
-        if (chatGroup.isEmpty())
-            return null;
-        Optional<Team> team = teamRepository.findTeamByNameAndChatGroup(pendingTeam, chatGroup.get());
-        if (team.isEmpty())
-            return null;
-        switch (operation) {
-            case "/rename_team" -> response = renameTeam(value, team.get(), chatGroup.get());
-            case "/add_member" -> response = addMemberToTeam(value, team.get());
-            case "/remove_member" -> response = removeMemberFromTeam(value, team.get());
+        Map<String, String> savedOperation = cacheUtilities.get(key);
+        cacheUtilities.remove(key);
+        Map.Entry<String, String> entry = savedOperation.entrySet().iterator().next();
+        String teamName = entry.getKey();
+        String operation = entry.getValue();
+
+        Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
+        if (teamOpt.isEmpty()) return null;
+
+        Team team = teamOpt.get();
+        BotCommands command = BotCommands.getCommand(operation);
+        switch (command) {
+            case RENAME_TEAM -> response = renameTeam(value, team, chatId);
+            case ADD_MEMBER -> response = addMemberToTeam(value, team);
+            case REMOVE_MEMBER -> response = removeMemberFromTeam(value, team);
         }
-        pendingOperations.clear();
         return response;
     }
 
     ///  Renaming an existing team
     @NotNull
-    private SendMessage renameTeam(String newName, Team team, ChatGroup chatGroup) {
+    private SendMessage renameTeam(String newName, Team team, Long chatId) {
         SendMessage response = new SendMessage();
-        if (teamRepository.existsByNameAndChatGroup(newName, chatGroup)) {
+        if (teamRepository.existsByNameAndChatGroupChatId(newName, chatId)) {
             response.setText(BotMessages.TEAM_ALREADY_EXISTS.format());
             return response;
         }
+        String oldName = team.getName();
         team.setName(newName);
         teamRepository.save(team);
-        response.setText(BotMessages.TEAM_RENAMED.format(team.getName(), newName));
+        response.setText(BotMessages.TEAM_RENAMED.format(oldName, newName));
         return response;
     }
 
@@ -231,7 +222,6 @@ public class Operations {
         Pattern pattern = Pattern.compile("@([A-Za-z0-9_]{5,32})");
         Matcher matcher = pattern.matcher(userNames);
         StringBuilder responseText = new StringBuilder();
-        System.out.println(userNames);
         var response = new SendMessage();
         while (matcher.find()) {
             String username = matcher.group(1).trim();
