@@ -35,6 +35,9 @@ public class Team {
     )
     private Set<Member> members = new HashSet<>();
 
+    @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Set<Task> tasks = new HashSet<>();
+
     @ManyToOne
     @JoinColumn(name = "chat_group_id", nullable = false)
     private ChatGroup chatGroup;

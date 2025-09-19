@@ -5,8 +5,12 @@ import org.linker.plnm.utilities.IOUtilities;
 
 public enum BotMessage {
     START_RESPONSE(IOUtilities.readFile("static/botStart.html")),
-    HINT_RESPONSE(IOUtilities.readFile("static/botHint.html")),
+    HINT_RESPONSE(IOUtilities.readFile("static/botCommands.html")),
     ACTIONS_MENU_HEADER("What do you want to do?"),
+    TASKS_MENU_HEADER("⦿ Select an option"),
+    TASK_CREATION_MENU_HEADER("\uD83D\uDD8A Create a new task"),
+    TASK_DELETION_MENU_HEADER("\uD83E\uDDF9 Remove a task"),
+    TASK_CH_STATUS_MENU_HEADER("\uD83D\uDD8B Change task status"),
     TEAM_CREATED("✅ Team '%s' created successfully"),
     TEAM_REMOVED("✅ Team '%s' removed successfully"),
     TEAM_RENAMED("✅ Team '%s' renamed to '%s' "),
@@ -15,6 +19,7 @@ public enum BotMessage {
     USER_ADDED_TO_TEAM("✅ Success to add @%s"),
     USER_REMOVED_FROM_TEAM("✅ Success to remove @%s"),
     USER_HAS_NOT_STARTED("❌ The user @%s has not started the bot yet."),
+    YOU_DID_NOT_STARTED("❌ You didn't start the bot yet."),
     USER_ALREADY_ADDED_TO_TEAM("❎ The user @%s already become a member in this team."),
     USER_HAS_NOT_BEEN_ADDED_TO_TEAM("❕ The user @%s has not become a member of the team before."),
     TEAM_ALREADY_EXISTS("⚠ Team '%s' already exists in this group!"),
