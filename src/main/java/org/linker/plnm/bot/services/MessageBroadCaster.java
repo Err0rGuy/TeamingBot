@@ -1,6 +1,6 @@
 package org.linker.plnm.bot.services;
 
-import org.linker.plnm.bot.messageUtilities.MessageBuilder;
+import org.linker.plnm.bot.builders.MessageBuilder;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotMessage;
