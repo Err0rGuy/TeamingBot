@@ -1,14 +1,15 @@
 package org.linker.plnm.bot.services;
 import lombok.Setter;
 import org.linker.plnm.entities.ChatGroup;
+import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.TelegramUserRole;
 import org.linker.plnm.repositories.ChatGroupRepository;
+import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.linker.plnm.utilities.CacheUtilities;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -16,11 +17,11 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class UpdateHandler {
@@ -29,9 +30,11 @@ public class UpdateHandler {
 
     private final TeamRepository teamRepository;
 
-    private final MessageBroadCaster broadCaster;
+    private final MessageCaster broadCaster;
 
-    private final CacheOperation cacheOperation;
+    private final PendingOperation pendingOperation;
+
+    private final MemberRepository memberRepository;
 
     private final TeamingOperations teamingOperations;
 
@@ -41,45 +44,41 @@ public class UpdateHandler {
 
     public UpdateHandler(
             TeamRepository teamRepository,
-            MessageBroadCaster broadCaster,
+            MessageCaster messageCaster,
             TeamingOperations teamingOperations,
             ChatGroupRepository chatGroupRepository,
-            CacheUtilities<String, String> cacheUtilities, CacheOperation cacheOperation
+            CacheUtilities<String, String> cacheUtilities, PendingOperation pendingOperation, MemberRepository memberRepository
     ) {
-        this.cacheOperation = cacheOperation;
-        this.broadCaster = broadCaster;
+        this.pendingOperation = pendingOperation;
+        this.broadCaster = messageCaster;
         this.cacheUtilities = cacheUtilities;
         this.teamRepository = teamRepository;
         this.teamingOperations = teamingOperations;
         this.chatGroupRepository = chatGroupRepository;
+        this.memberRepository = memberRepository;
     }
 
     /// Handling broadcast calls and user argument for pending operations
     public SendMessage argumentUpdateHandler(Message message, String text, Long chatId, Long userId) {
         SendMessage response = null;
-        Pattern pattern = Pattern.compile("#(\\w+)");
+        Pattern pattern = Pattern.compile("#([\\p{L}0-9_]+)");
         if (pattern.matcher(text).find())
             findingBroadCastMessages(pattern.matcher(text), chatId, message);
-        else if(cacheUtilities.exists(cacheOperation.getCacheKey(chatId, userId)) &&
+        else if(cacheUtilities.exists(pendingOperation.getCacheKey(chatId, userId)) &&
                 !isNotAdmin(chatId, userId))
-            response = cacheOperation.performCachedOperation(chatId, userId, text);
+            response = pendingOperation.performPendedOperation(chatId, userId, text);
         return response;
     }
 
     /// Handling callback query updates
-    public SendMessage callBackUpdateHandler(String commandTxt, String argument, Long chatId, Long userId) {
+    public SendMessage callBackUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId) {
         SendMessage response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
-        if (command.isPrivileged() && isNotAdmin(chatId, userId)) return null;
+        if (notAllowedCommand(command, chatId, userId, message)) return null;
         switch (command) {
-            case HINT ->
-                    response = teamingOperations.hintMessage(chatId);
-            case SHOW_TEAMS ->
-                    response = teamingOperations.showTeams(chatId);
-            case RENAME_TEAM ->
-                    response = cacheOperation.cache(chatId, userId, argument, commandTxt, "new name");
-            case REMOVE_MEMBER, ADD_MEMBER ->
-                    response = cacheOperation .cache(chatId, userId, argument, commandTxt, "username's");
+            case HINT -> response = teamingOperations.hintMessage(chatId);
+            case RENAME_TEAM -> response = pendingOperation.addToPending(chatId, userId, arg, commandTxt, "new name");
+            case REMOVE_MEMBER, ADD_MEMBER -> response = pendingOperation.addToPending(chatId, userId, arg, commandTxt, "username's");
         }
         return response;
     }
@@ -88,7 +87,7 @@ public class UpdateHandler {
     public SendMessage commandUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId) {
         SendMessage response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
-        if (command.isPrivileged() && isNotAdmin(chatId, userId)) return null;
+        if (notAllowedCommand(command, chatId, userId, message)) return null;
         switch (command) {
             case HINT -> response = teamingOperations.hintMessage(chatId);
             case START -> response = teamingOperations.onBotStart(message);
@@ -104,14 +103,23 @@ public class UpdateHandler {
     private void findingBroadCastMessages(Matcher matcher, Long chatId, Message message){
         Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
         List<BotApiMethodMessage> messages = new ArrayList<>();
+        Set<Long> sentIds = new HashSet<>();
         if (chatGroup.isEmpty()) return;
         while (matcher.find()) {
             String teamName = matcher.group(1);
             Optional<Team> team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
-            if (team.isPresent())
-                messages = broadCaster.sendMessageToTeamMembers(team.get(), message);
-            else if(teamName.equalsIgnoreCase("global"))
-                messages = broadCaster.sendMessageToAllMembers(message);
+            if (team.isPresent()) {
+                messages = broadCaster.sendMultiCast(team.get(), message, sentIds);
+                sentIds.addAll(
+                        team.get().getMembers().stream().map(Member::getTelegramId).collect(Collectors.toSet())
+                );
+            }
+            else if(teamName.equalsIgnoreCase("global")) {
+                messages = broadCaster.sendBroadCast(message, sentIds);
+                sentIds.addAll(
+                    memberRepository.findAll().stream().map(Member::getTelegramId).collect(Collectors.toSet())
+                );
+            }
             for(BotApiMethodMessage msg : messages) {
                 try {
                     sender.execute(msg);
@@ -123,7 +131,7 @@ public class UpdateHandler {
     }
 
     /// Checking if user is admin
-    public boolean isNotAdmin(Long chatId, Long userId) {
+    private boolean isNotAdmin(Long chatId, Long userId) {
         GetChatMember getChatMember = new GetChatMember();
         getChatMember.setChatId(chatId.toString());
         getChatMember.setUserId(userId);
@@ -134,6 +142,17 @@ public class UpdateHandler {
         } catch (TelegramApiException e) {
             return true;
         }
+    }
+
+    /// Check if message comes from a group chat
+    private boolean isGroup(Message message) {
+        return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
+    }
+
+    /// Checking if command is allowed to proceed
+    private boolean notAllowedCommand(BotCommand command, Long chatId, Long userId, Message message) {
+        return command.isPrivileged() && isNotAdmin(chatId, userId) ||
+                command.isGroupCmd() && !isGroup(message);
     }
 
 }

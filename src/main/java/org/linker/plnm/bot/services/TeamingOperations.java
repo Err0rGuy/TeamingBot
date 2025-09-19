@@ -125,7 +125,7 @@ public class TeamingOperations {
     }
 
     /// List all teams in the group
-    @Transactional(readOnly = true)
+    @Nullable @Transactional(readOnly = true)
     public SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
         var teams = teamRepository.findTeamByChatGroupChatId(chatId);

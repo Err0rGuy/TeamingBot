@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class CacheOperation {
+public class PendingOperation {
 
     private final TeamRepository teamRepository;
 
@@ -24,7 +24,7 @@ public class CacheOperation {
 
     private final TeamingOperations teamingOperations;
 
-    public CacheOperation(
+    public PendingOperation(
             TeamRepository teamRepository,
             CacheUtilities<String, String> cacheUtilities,
             TeamingOperations teamingOperations
@@ -40,7 +40,7 @@ public class CacheOperation {
     }
 
     /// Caching future operations
-    @NotNull SendMessage cache(Long chatId, Long userId, String teamName, String operation, String argName) {
+    @NotNull SendMessage addToPending(Long chatId, Long userId, String teamName, String operation, String argName) {
         SendMessage response = new SendMessage();
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -60,7 +60,7 @@ public class CacheOperation {
 
 
     /// Performing cached operation
-    @Transactional SendMessage performCachedOperation(Long chatId, Long userId, String argument) {
+    @Transactional SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
         SendMessage response = new SendMessage();
         String key = getCacheKey(chatId, userId);
 
