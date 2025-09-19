@@ -2,8 +2,8 @@ package org.linker.plnm.bot.services;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.linker.plnm.bot.messageUtilities.KeyboardBuilder;
-import org.linker.plnm.bot.messageUtilities.MessageBuilder;
+import org.linker.plnm.bot.builders.KeyboardBuilder;
+import org.linker.plnm.bot.builders.MessageBuilder;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;

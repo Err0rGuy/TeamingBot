@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.messageUtilities;
+package org.linker.plnm.bot.builders;
 
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
