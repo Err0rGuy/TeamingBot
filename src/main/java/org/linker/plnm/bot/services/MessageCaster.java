@@ -12,32 +12,38 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class MessageBroadCaster {
+public class MessageCaster {
 
     private final MemberRepository memberRepository;
 
-    public MessageBroadCaster(MemberRepository memberRepository) {
+    public MessageCaster(MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
     }
 
     /// Broadcast message to team members
-    public List<BotApiMethodMessage> sendMessageToTeamMembers(Team team, Message broadCastMessage) {
+    List<BotApiMethodMessage> sendMultiCast(Team team, Message broadCastMessage, Set<Long> sentIds) {
         List<BotApiMethodMessage> messagesToSend = new ArrayList<>();
         long groupChatId = broadCastMessage.getChatId();
         int messageId = broadCastMessage.getMessageId();
         boolean isSuperGroup = broadCastMessage.getChat().isSuperGroupChat();
         try {
             if (isSuperGroup)
-                for (Member member : team.getMembers())
-                    messagesToSend.add(
-                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, team.getName(), member)
-                    );
-            else for(Member member : team.getMembers())
-                messagesToSend.addAll(
-                        sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, team.getName(), member)
-                );
+                for (Member member : team.getMembers()) {
+                    if (!sentIds.contains(member.getTelegramId()))
+                        messagesToSend.add(
+                                messageForSuperGroupMember(broadCastMessage, groupChatId, messageId, team.getName(), member.getTelegramId())
+                        );
+                }
+            else for (Member member : team.getMembers()) {
+                    if (!sentIds.contains(member.getTelegramId()))
+                        messagesToSend.addAll(
+                            messageForNormalGroupMember(broadCastMessage, groupChatId, messageId, team.getName(), member.getTelegramId())
+                        );
+                }
+
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
@@ -45,20 +51,21 @@ public class MessageBroadCaster {
     }
 
     /// Broadcast message to all group members
-    public List<BotApiMethodMessage> sendMessageToAllMembers(Message broadCastMessage) {
+    List<BotApiMethodMessage> sendBroadCast(Message broadCastMessage, Set<Long>sentIds) {
         List<BotApiMethodMessage> messagesToSend = new ArrayList<>();
         long groupChatId = broadCastMessage.getChatId();
         int messageId = broadCastMessage.getMessageId();
         boolean isSuperGroup = broadCastMessage.getChat().isSuperGroupChat();
         for (Member member : memberRepository.findAll()) {
             try {
+                if (sentIds.contains(member.getTelegramId())) continue;
                 if (isSuperGroup)
                     messagesToSend.add(
-                            sendMessageToSuperGroupMembers(broadCastMessage, groupChatId, messageId, "global", member)
+                            messageForSuperGroupMember(broadCastMessage, groupChatId, messageId, "global", member.getTelegramId())
                     );
                 else
                     messagesToSend.addAll(
-                            sendMessageToNormalGroupMembers(broadCastMessage, groupChatId, messageId, "global", member)
+                            messageForNormalGroupMember(broadCastMessage, groupChatId, messageId, "global", member.getTelegramId())
                     );
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
@@ -68,24 +75,27 @@ public class MessageBroadCaster {
     }
 
 
-    private SendMessage sendMessageToSuperGroupMembers(
-                Message broadCastMessage, long groupChatId,
-                int messageId, String teamName, Member member) throws TelegramApiException {
+    private SendMessage messageForSuperGroupMember(
+            Message broadCastMessage, Long groupChatId,
+            int messageId, String teamName, Long memberId) throws TelegramApiException {
+
         String link = "https://t.me/c/" + String.valueOf(groupChatId).substring(4) + "/" + messageId;
+
         String text = BotMessage.SUPER_GROUP_BROADCAST_MESSAGE.format(
-                teamName, broadCastMessage.getChat().getTitle(),
-                broadCastMessage.getText().replace("#" + teamName, "") + "\n\n", link
+                broadCastMessage.getChat().getTitle(),
+                broadCastMessage.getText(),
+                link
         );
-        return MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown");
+        return MessageBuilder.buildMessage(memberId, text, "Markdown");
     }
 
-    private List<BotApiMethodMessage> sendMessageToNormalGroupMembers(
-        Message broadCastMessage, long groupChatId,
-        int messageId, String teamName, Member member) throws TelegramApiException {
-        String text = BotMessage.NORMAL_GROUP_BROADCAST_MESSAGE.format(teamName, broadCastMessage.getChat().getTitle());
+    private List<BotApiMethodMessage> messageForNormalGroupMember(
+        Message broadCastMessage, Long groupChatId,
+        int messageId, String teamName, Long memberId) throws TelegramApiException {
+        String text = BotMessage.NORMAL_GROUP_BROADCAST_MESSAGE.format(broadCastMessage.getChat().getTitle());
         return new ArrayList<>(List.of(
-                MessageBuilder.buildMessage(member.getTelegramId(), text, "Markdown"),
-                MessageBuilder.buildForwardMessage(member.getTelegramId(), groupChatId, messageId)
+                MessageBuilder.buildMessage(memberId, text, "Markdown"),
+                MessageBuilder.buildForwardMessage(memberId, groupChatId, messageId)
         ));
     }
 }

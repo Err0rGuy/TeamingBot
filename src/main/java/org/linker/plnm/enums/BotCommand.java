@@ -7,15 +7,16 @@ import java.util.stream.Collectors;
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT)),
     HINT("/hint", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
-    SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT)),
-    EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
-    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
-    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK));
+    SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD));
 
     public enum CommandType {
+        GROUP_CMD,
         PRIVILEGED,
         UNPRIVILEGED,
         CALLBACK,
@@ -53,6 +54,10 @@ public enum BotCommand {
 
     public boolean isPrivileged() {
         return types.contains(CommandType.PRIVILEGED);
+    }
+
+    public boolean isGroupCmd() {
+        return types.contains(CommandType.GROUP_CMD);
     }
 
     public static BotCommand getCommand(String command) {

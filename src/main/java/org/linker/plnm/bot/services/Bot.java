@@ -89,7 +89,7 @@ public class Bot extends TelegramLongPollingBot {
         long userId = message.getFrom().getId();
 
         if (update.hasCallbackQuery() && BotCommand.isCallback(command))
-            response = updateHandler.callBackUpdateHandler(command, argument, chatId, userId);
+            response = updateHandler.callBackUpdateHandler(message, command, argument, chatId, userId);
         else if(BotCommand.isText(command))
             response = updateHandler.commandUpdateHandler(message, command, argument,chatId, userId);
         else
@@ -98,6 +98,7 @@ public class Bot extends TelegramLongPollingBot {
         if (response == null || response.getText().isEmpty())
             return;
         response.setChatId(message.getChatId());
+        response.setMessageThreadId(message.getMessageThreadId());
         try {
             execute(response);
         } catch (TelegramApiException e) {

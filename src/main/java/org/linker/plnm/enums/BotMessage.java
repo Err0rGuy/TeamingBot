@@ -25,8 +25,8 @@ public enum BotMessage {
     EDIT_TEAM_NO_ARG("⁉ Please provide a team name!\n/edit_team <TeamName>"),
     NO_TEAM_FOUND("❕ No team found!"),
     EXPIRED_OPERATION("❌ Expired Operation!"),
-    SUPER_GROUP_BROADCAST_MESSAGE("💬 New message in *%s* team at *%s*:\n\n%s\n\n👉 [Jump to message](\" + link\")"),
-    NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message in *%s* team at *%s*");
+    SUPER_GROUP_BROADCAST_MESSAGE("💬 New message at *%s*:\n\n%s\n\n👉 [Jump to message](%s)"),
+    NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message at *%s* \uD83D\uDC47");
 
 
     private final String template;

@@ -12,12 +12,13 @@ public class CacheUtilities <K, V> {
 
     private final Cache<String, Map<K, V>> cache;
 
+    private final int expirationTimeInMinutes = 5;
+
     public CacheUtilities() {
         cache = Caffeine.newBuilder()
-        .expireAfterWrite(2, TimeUnit.MINUTES)
+        .expireAfterWrite(expirationTimeInMinutes, TimeUnit.MINUTES)
         .maximumSize(1000)
         .build();
-
     }
 
     public Map<K, V> get(String key) {
