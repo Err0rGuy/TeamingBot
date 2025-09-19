@@ -1,18 +1,21 @@
 package org.linker.plnm.bot.services;
 import lombok.Setter;
+import org.linker.plnm.bot.helpers.MenuManager;
+import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
+import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.enums.TelegramUserRole;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.linker.plnm.utilities.CacheUtilities;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.bots.AbsSender;
@@ -36,7 +39,7 @@ public class UpdateHandler {
 
     private final MemberRepository memberRepository;
 
-    private final TeamingOperations teamingOperations;
+    private final TeamingActions teamingActions;
 
     private final ChatGroupRepository chatGroupRepository;
 
@@ -45,22 +48,24 @@ public class UpdateHandler {
     public UpdateHandler(
             TeamRepository teamRepository,
             MessageCaster messageCaster,
-            TeamingOperations teamingOperations,
+            TeamingActions teamingActions,
             ChatGroupRepository chatGroupRepository,
-            CacheUtilities<String, String> cacheUtilities, PendingOperation pendingOperation, MemberRepository memberRepository
+            CacheUtilities<String, String> cacheUtilities,
+            PendingOperation pendingOperation,
+            MemberRepository memberRepository
     ) {
         this.pendingOperation = pendingOperation;
         this.broadCaster = messageCaster;
         this.cacheUtilities = cacheUtilities;
         this.teamRepository = teamRepository;
-        this.teamingOperations = teamingOperations;
+        this.teamingActions = teamingActions;
         this.chatGroupRepository = chatGroupRepository;
         this.memberRepository = memberRepository;
     }
 
     /// Handling broadcast calls and user argument for pending operations
-    public SendMessage argumentUpdateHandler(Message message, String text, Long chatId, Long userId) {
-        SendMessage response = null;
+    public BotApiMethod<?> argumentUpdateHandler(Message message, String text, Long chatId, Long userId) {
+        BotApiMethod<?> response = null;
         Pattern pattern = Pattern.compile("#([\\p{L}0-9_]+)");
         if (pattern.matcher(text).find())
             findingBroadCastMessages(pattern.matcher(text), chatId, message);
@@ -71,30 +76,44 @@ public class UpdateHandler {
     }
 
     /// Handling callback query updates
-    public SendMessage callBackUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId) {
-        SendMessage response = null;
+    public BotApiMethod<?> callBackUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId, Integer messageId) {
+        BotApiMethod<?> response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
         if (notAllowedCommand(command, chatId, userId, message)) return null;
         switch (command) {
-            case HINT -> response = teamingOperations.hintMessage(chatId);
+            case COMMANDS -> response = teamingActions.hintMessage(chatId);
             case RENAME_TEAM -> response = pendingOperation.addToPending(chatId, userId, arg, commandTxt, "new name");
             case REMOVE_MEMBER, ADD_MEMBER -> response = pendingOperation.addToPending(chatId, userId, arg, commandTxt, "username's");
+            case CREATE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(
+                            chatId, messageId, BotMessage.TASK_CREATION_MENU_HEADER.format(), MenuManager.taskCreationMenu());
+            case REMOVE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(
+                            chatId, messageId, BotMessage.TASK_DELETION_MENU_HEADER.format(), MenuManager.taskRemoveMenu());
+            case CH_TASK_STATUS_MENU -> response = MessageBuilder.buildEditMessageText(
+                            chatId, messageId, BotMessage.TASK_CH_STATUS_MENU_HEADER.format(), MenuManager.taskChangeStatusMenu());
+            case TASKS_MENU -> response = MessageBuilder.buildEditMessageText(
+                            chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
+            case TASKS_MENU_NEW ->  response = MessageBuilder.buildMessage(
+                            chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
+
         }
         return response;
     }
 
     /// Handling text commands update
-    public SendMessage commandUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId) {
-        SendMessage response = null;
+    public BotApiMethod<?> commandUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId, Integer messageId) {
+        BotApiMethod<?> response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
         if (notAllowedCommand(command, chatId, userId, message)) return null;
         switch (command) {
-            case HINT -> response = teamingOperations.hintMessage(chatId);
-            case START -> response = teamingOperations.onBotStart(message);
-            case CREATE_TEAM -> response = teamingOperations.createTeam(chatId, message.getChat().getTitle(), arg);
-            case REMOVE_TEAM -> response = teamingOperations.removeTeam(chatId, arg);
-            case SHOW_TEAMS -> response = teamingOperations.showTeams(chatId);
-            case EDIT_TEAM_MENU -> response = teamingOperations.editTeam(chatId, arg);
+            case COMMANDS -> response = teamingActions.hintMessage(chatId);
+            case START -> response = teamingActions.onBotStart(message);
+            case SHOW_TEAMS -> response = teamingActions.showTeams(chatId);
+            case REMOVE_TEAM -> response = teamingActions.removeTeam(chatId, arg);
+            case EDIT_TEAM_MENU -> response = teamingActions.editTeam(chatId, arg);
+            case MY_TEAMS -> response = teamingActions.myTeams(chatId, userId);
+            case CREATE_TEAM -> response = teamingActions.createTeam(chatId, message.getChat().getTitle(), arg);
+            case TASKS_MENU -> response = MessageBuilder.buildMessage(
+                    chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
         }
         return response;
     }

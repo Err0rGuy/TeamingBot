@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.linker.plnm.bot.services.Bot;
 import org.linker.plnm.bot.services.UpdateHandler;
 import org.linker.plnm.bot.settings.BotSettings;
-import org.linker.plnm.entities.Member;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.utilities.IOUtilities;
 import org.mockito.ArgumentCaptor;
@@ -20,7 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -113,7 +111,7 @@ class BotPrivilegedCommandsTest {
         verify(bot).execute(captor.capture());
         SendMessage response = captor.getValue();
         assertThat(response.getText()).isEqualTo(
-                IOUtilities.readFile("static/botHint.html")
+                IOUtilities.readFile("static/botCommands.html")
         );
     }
 

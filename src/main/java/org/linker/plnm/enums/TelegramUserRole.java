@@ -1,5 +1,8 @@
 package org.linker.plnm.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum TelegramUserRole {
     ADMIN("administrator"),
     CREATOR("creator");
@@ -8,10 +11,6 @@ public enum TelegramUserRole {
 
     TelegramUserRole(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     public boolean isEqualTo(String role) {

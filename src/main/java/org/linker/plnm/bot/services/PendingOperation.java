@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-@Slf4j
 @Service
 public class PendingOperation {
 
@@ -22,16 +21,16 @@ public class PendingOperation {
 
     private final CacheUtilities<String, String> cacheUtilities;
 
-    private final TeamingOperations teamingOperations;
+    private final TeamingActions teamingActions;
 
     public PendingOperation(
             TeamRepository teamRepository,
             CacheUtilities<String, String> cacheUtilities,
-            TeamingOperations teamingOperations
+            TeamingActions teamingActions
     ) {
         this.teamRepository = teamRepository;
         this.cacheUtilities = cacheUtilities;
-        this.teamingOperations = teamingOperations;
+        this.teamingActions = teamingActions;
     }
 
     /// Cached operation keys are the combination of chatId and userId separated with '|'
@@ -75,9 +74,9 @@ public class PendingOperation {
         Team team = teamOpt.get();
         BotCommand command = BotCommand.getCommand(operation);
         switch (command) {
-            case ADD_MEMBER -> response = teamingOperations.addMemberToTeam(argument, team);
-            case RENAME_TEAM -> response = teamingOperations.renameTeam(argument, team, chatId);
-            case REMOVE_MEMBER -> response = teamingOperations.removeMemberFromTeam(argument, team);
+            case ADD_MEMBER -> response = teamingActions.addMemberToTeam(argument, team);
+            case RENAME_TEAM -> response = teamingActions.renameTeam(argument, team, chatId);
+            case REMOVE_MEMBER -> response = teamingActions.removeMemberFromTeam(argument, team);
         }
         return response;
     }

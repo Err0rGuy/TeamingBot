@@ -2,8 +2,9 @@ package org.linker.plnm.bot.services;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.linker.plnm.bot.builders.KeyboardBuilder;
-import org.linker.plnm.bot.builders.MessageBuilder;
+import org.linker.plnm.bot.helpers.KeyboardBuilder;
+import org.linker.plnm.bot.helpers.MenuManager;
+import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
@@ -25,7 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class TeamingOperations {
+public class TeamingActions {
 
     private final TemplateEngine renderEngine;
 
@@ -35,7 +36,7 @@ public class TeamingOperations {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    public TeamingOperations(
+    public TeamingActions(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
@@ -48,7 +49,7 @@ public class TeamingOperations {
     }
 
     /// Bot action menu
-    public SendMessage actionMenu() {
+    @NotNull SendMessage actionMenu() {
         SendMessage response = new SendMessage();
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         var creatTeamBtn = KeyboardBuilder.buildButton("⛏ Create Team", BotCommand.CREATE_TEAM.str());
@@ -63,35 +64,29 @@ public class TeamingOperations {
         return response;
     }
 
-    @Nullable /// Bot start action
-    public SendMessage onBotStart(Message message) {
+    /// On bot start
+    @Nullable SendMessage onBotStart(Message message) {
         var optMember = TelegramUserMapper.mapToMember(message.getFrom());
         if (optMember.isEmpty()) return null;
         var member = optMember.get();
         if (!memberRepository.existsById(member.getTelegramId()))
             memberRepository.save(member);
-        InlineKeyboardButton button = KeyboardBuilder.buildButton("\uD83D\uDCA1Hint...", BotCommand.HINT.str());
-        List<InlineKeyboardButton> row = new ArrayList<>(List.of(button));
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>(List.of(row));
-        var keyboard = new InlineKeyboardMarkup();
-        keyboard.setKeyboard(rows);
-        SendMessage sendMessage = MessageBuilder.buildMessage(
-                message.getChatId(), BotMessage.START_RESPONSE.format(), "HTML"
+        return MessageBuilder.buildMessage(
+                message.getChatId(), message.getMessageId(),
+                BotMessage.START_RESPONSE.format(), "HTML", MenuManager.startMenu()
         );
-        sendMessage.setReplyMarkup(keyboard);
-        return sendMessage;
     }
 
     /// Hint message
-    public SendMessage hintMessage(Long chatId) {
+    @NotNull SendMessage hintMessage(Long chatId) {
         return MessageBuilder.buildMessage(chatId, BotMessage.HINT_RESPONSE.format(), "HTML");
     }
 
     /// Creating a new team
-    public SendMessage createTeam(Long chatId, String groupName, String teamName) {
+    @NotNull SendMessage createTeam(Long chatId, String groupName, String teamName) {
         SendMessage response = new SendMessage();
         ChatGroup group;
-        if (teamName == null) {
+        if (teamName == null || teamName.isEmpty()) {
             response.setText(BotMessage.CREATE_TEAM_NO_ARG.format());
             return response;
         }
@@ -110,9 +105,9 @@ public class TeamingOperations {
     }
 
     /// Removing an existing team
-    public SendMessage removeTeam(Long chatId, String teamName) {
+    @NotNull SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (teamName == null) {
+        if (teamName == null || teamName.isEmpty()) {
             response.setText(BotMessage.REMOVE_TEAM_NO_ARG.format());
             return response;
         }
@@ -125,8 +120,8 @@ public class TeamingOperations {
     }
 
     /// List all teams in the group
-    @Nullable @Transactional(readOnly = true)
-    public SendMessage showTeams(Long chatId) {
+    @Transactional(readOnly = true)
+    @NotNull SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
         var teams = teamRepository.findTeamByChatGroupChatId(chatId);
         if (teams.isEmpty()) {
@@ -140,10 +135,28 @@ public class TeamingOperations {
         return response;
     }
 
-    /// Editing an existing team, (edit name and members)
-    public SendMessage editTeam(Long chatId, String teamName) {
+    /// List all the user teams
+    @Transactional(readOnly = true)
+    @NotNull SendMessage myTeams(Long chatId, Long userId) {
         SendMessage response = new SendMessage();
-        if (teamName == null) {
+        var memberOpt = memberRepository.findById(userId);
+        if (memberOpt.isEmpty()){
+            response.setText(BotMessage.YOU_DID_NOT_STARTED.format());
+            return response;
+        }
+        var member = memberOpt.get();
+        List<Team> yourTeams = member.getTeams().stream().filter(t -> t.getMembers().contains(member)).toList();
+        Context context = new  Context();
+        context.setVariable("teams", yourTeams);
+        String text = renderEngine.process("myTeams", context);
+        response = MessageBuilder.buildMessage(chatId, text,"HTML");
+        return response;
+    }
+
+    /// Editing an existing team, (edit name and members)
+    @NotNull SendMessage editTeam(Long chatId, String teamName) {
+        SendMessage response = new SendMessage();
+        if (teamName == null || teamName.isEmpty()) {
             response.setText(BotMessage.EDIT_TEAM_NO_ARG.format());
             return response;
         }

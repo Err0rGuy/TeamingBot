@@ -27,6 +27,9 @@ public class Member {
     @ManyToMany(mappedBy = "members", cascade = {CascadeType.PERSIST})
     private Set<Team> teams = new HashSet<>();
 
+    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Set<Task> tasks = new HashSet<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -6,14 +6,26 @@ import java.util.stream.Collectors;
 
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT)),
-    HINT("/hint", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
+    COMMANDS("/commands", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
     SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    MY_TEAMS("/my_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
     EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
     CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
+    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
     REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.GROUP_CMD)),
     ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
-    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
-    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD));
+    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    TASKS_MENU("/tasks_menu", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK,CommandType.GROUP_CMD)),
+    TASKS_MENU_NEW("/tasks_menu_new", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK,CommandType.GROUP_CMD)),
+    CREATE_TASK_MENU("menu:createTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    REMOVE_TASK_MENU("menu:removeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    CH_TASK_STATUS_MENU("menu:chTaskStatus", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    CREATE_MEMBER_TASK("/create_member_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    CREATE_TEAM_TASK("/create_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    REMOVE_MEMBER_TASK("/remove_member_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    REMOVE_TEAM_TASK("/remove_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    CH_MEMBER_TASK_STATUS("/ch_member_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
+    CH_TEAM_TASK_STATUS("/ch_team_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD));
 
     public enum CommandType {
         GROUP_CMD,
