@@ -2,10 +2,10 @@ package org.linker.plnm.bot.services;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.linker.plnm.bot.helpers.KeyboardBuilder;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.entities.ChatGroup;
+import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
@@ -16,9 +16,7 @@ import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import java.util.*;
@@ -32,54 +30,57 @@ public class TeamingActions {
 
     private final TeamRepository teamRepository;
 
+    private final PendingOperation pendingOperation;
+
     private final MemberRepository memberRepository;
 
     private final ChatGroupRepository chatGroupRepository;
+
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("@([A-Za-z0-9_]{5,32})");
 
     public TeamingActions(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            TemplateEngine renderEngine
+            TemplateEngine renderEngine,
+            PendingOperation pendingOperation
     ) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
+        this.pendingOperation = pendingOperation;
     }
 
-    /// Bot action menu
-    @NotNull SendMessage actionMenu() {
+    /// Ask user for team name and adding to pending operations
+    @NotNull SendMessage askForEditingArg(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
         SendMessage response = new SendMessage();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        var creatTeamBtn = KeyboardBuilder.buildButton("⛏ Create Team", BotCommand.CREATE_TEAM.str());
-        var removeTeamBtn = KeyboardBuilder.buildButton("\uD83E\uDEA6 Remove Team", BotCommand.REMOVE_TEAM.str());
-        var showTeamsBtn = KeyboardBuilder.buildButton("\uD83D\uDCCB Show Teams", BotCommand.SHOW_TEAMS.str());
-        keyboard.add(List.of(creatTeamBtn));
-        keyboard.add(List.of(removeTeamBtn));
-        keyboard.add(List.of(showTeamsBtn));
-        InlineKeyboardMarkup inlineKeyboard = InlineKeyboardMarkup.builder().keyboard(keyboard).build();
-        response.setReplyMarkup(inlineKeyboard);
-        response.setText(BotMessage.ACTIONS_MENU_HEADER.format());
+        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
+            response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+            return response;
+        }
+        if(command.equals(BotCommand.REMOVE_MEMBER) && !teamRepository.teamHasMember(teamName, chatId)){
+            response.setText(BotMessage.TEAM_HAS_NO_MEMBER.format(teamName));
+            return response;
+        }
+        pendingOperation.addToPending(chatId, userId, command.str(), teamName);
+        response.setText(BotMessage.ASK_FOR_ARG.format(argName));
         return response;
     }
 
     /// On bot start
-    @Nullable SendMessage onBotStart(Message message) {
-        var optMember = TelegramUserMapper.mapToMember(message.getFrom());
+    @Nullable SendMessage onBotStart(@NotNull User fromUser, Long chatId, Integer messageId) {
+        var optMember = TelegramUserMapper.mapToMember(fromUser);
         if (optMember.isEmpty()) return null;
         var member = optMember.get();
         if (!memberRepository.existsById(member.getTelegramId()))
             memberRepository.save(member);
-        return MessageBuilder.buildMessage(
-                message.getChatId(), message.getMessageId(),
-                BotMessage.START_RESPONSE.format(), "HTML", MenuManager.startMenu()
-        );
+        return MessageBuilder.buildMessage(chatId, messageId, BotMessage.START_RESPONSE.format(), "HTML", MenuManager.startMenu());
     }
 
     /// Hint message
-    @NotNull SendMessage hintMessage(Long chatId) {
-        return MessageBuilder.buildMessage(chatId, BotMessage.HINT_RESPONSE.format(), "HTML");
+    @NotNull SendMessage commandsList(Long chatId) {
+        return MessageBuilder.buildMessage(chatId, BotMessage.COMMANDS_LIST.format(), "HTML");
     }
 
     /// Creating a new team
@@ -111,17 +112,17 @@ public class TeamingActions {
             response.setText(BotMessage.REMOVE_TEAM_NO_ARG.format());
             return response;
         }
-        if (teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
-            teamRepository.deleteTeamByNameAndChatGroupChatId(teamName, chatId);
-            response.setText(BotMessage.TEAM_REMOVED.format(teamName));
-        } else
+        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+            return response;
+        }
+        teamRepository.deleteTeamByNameAndChatGroupChatId(teamName, chatId);
+        response.setText(BotMessage.TEAM_REMOVED.format(teamName));
         return response;
     }
 
     /// List all teams in the group
-    @Transactional(readOnly = true)
-    @NotNull SendMessage showTeams(Long chatId) {
+    @Transactional(readOnly = true) @NotNull SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
         var teams = teamRepository.findTeamByChatGroupChatId(chatId);
         if (teams.isEmpty()) {
@@ -136,8 +137,7 @@ public class TeamingActions {
     }
 
     /// List all the user teams
-    @Transactional(readOnly = true)
-    @NotNull SendMessage myTeams(Long chatId, Long userId) {
+    @Transactional(readOnly = true) @NotNull SendMessage myTeams(Long chatId, Long userId) {
         SendMessage response = new SendMessage();
         var memberOpt = memberRepository.findById(userId);
         if (memberOpt.isEmpty()){
@@ -164,26 +164,15 @@ public class TeamingActions {
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
             return response;
         }
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        var renameTeamButton = KeyboardBuilder.buildButton(
-                "Rename Team", BotCommand.RENAME_TEAM.str() + " " + teamName);
-        var addMemberButton = KeyboardBuilder.buildButton(
-                "Add Member", BotCommand.ADD_MEMBER.str() + " " + teamName);
-        var removeMemberButton = KeyboardBuilder.buildButton(
-                "Remove Member", BotCommand.REMOVE_MEMBER.str() + " " + teamName);
-        keyboard.add(List.of(renameTeamButton));
-        keyboard.add(List.of(addMemberButton));
-        keyboard.add(List.of(removeMemberButton));
-        InlineKeyboardMarkup inlineKeyboard = InlineKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .build();
-        response.setReplyMarkup(inlineKeyboard);
+        response.setReplyMarkup(MenuManager.editTeamMenu(teamName));
         response.setText(BotMessage.ASK_FOR_EDIT_OPTIONS.format(teamName));
         return response;
     }
 
     ///  Renaming an existing team
-    @NotNull SendMessage renameTeam(String newName, Team team, Long chatId) {
+    @Nullable SendMessage renameTeam(String newName, Team team, Long chatId) {
+        if (team == null)
+            return null;
         SendMessage response = new SendMessage();
         if (teamRepository.existsByNameAndChatGroupChatId(newName, chatId)) {
             response.setText(BotMessage.TEAM_ALREADY_EXISTS.format(newName));
@@ -196,54 +185,65 @@ public class TeamingActions {
         return response;
     }
 
-    /// Adding new members to a team
-    @NotNull SendMessage addMemberToTeam(String userNames, Team team) {
-        Pattern pattern = Pattern.compile("@([A-Za-z0-9_]{5,32})");
-        Matcher matcher = pattern.matcher(userNames);
-        StringBuilder responseText = new StringBuilder();
-        var response = new SendMessage();
-        while (matcher.find()) {
-            String username = matcher.group(1).trim();
-            var member = memberRepository.findByUsername(username);
-            if (member.isEmpty()) {
-                responseText.append(BotMessage.USER_HAS_NOT_STARTED.format(username)).append("\n");
-                continue;
-            }
-            if (team.getMembers().contains(member.get())) {
-                responseText.append(BotMessage.USER_ALREADY_ADDED_TO_TEAM.format(username)).append("\n");
-                continue;
-            }
-            team.getMembers().add(member.get());
-            member.get().getTeams().add(team);
-            teamRepository.save(team);
-            responseText.append(BotMessage.USER_ADDED_TO_TEAM.format(username)).append("\n");
-        }
-        response.setText(responseText.toString());
-        return response;
+    /// Check if user has started the bot
+    @NotNull private Optional<Member> checkUserStartedTheBot(StringBuilder responseText, String username) {
+        var memberOpt = memberRepository.findByUsername(username);
+        if (memberOpt.isEmpty())
+            responseText.append(BotMessage.USER_HAS_NOT_STARTED.format(username)).append("\n");
+        return memberOpt;
     }
 
-    /// Removing members from a team
-    @NotNull SendMessage removeMemberFromTeam(String userNames, Team team) {
-        Pattern pattern = Pattern.compile("@([A-Za-z0-9_]{5,32})");
-        Matcher matcher = pattern.matcher(userNames);
+    /// Adding new member to team
+    private void addMemberToTeam(String username, StringBuilder responseText, Team team) {
+        var memberOpt = checkUserStartedTheBot(responseText, username);
+        if (memberOpt.isEmpty())
+            return;
+        var member = memberOpt.get();
+        if (team.getMembers().contains(member)) {
+            responseText.append(BotMessage.USER_ALREADY_ADDED_TO_TEAM.format(username)).append("\n");
+            return;
+        }
+        team.getMembers().add(member);
+        member.getTeams().add(team);
+        teamRepository.save(team);
+        responseText.append(BotMessage.USER_ADDED_TO_TEAM.format(username)).append("\n");
+    }
+
+    /// Removing member from a team
+    private void removeMemberFromTeam(String username, StringBuilder responseText, Team team) {
+        var memberOpt = checkUserStartedTheBot(responseText, username);
+        if (memberOpt.isEmpty())
+            return;
+        var member = memberOpt.get();
+        if (!team.getMembers().contains(member)) {
+            responseText.append(BotMessage.USER_HAS_NOT_BEEN_ADDED_TO_TEAM.format(username)).append("\n");
+            return;
+        }
+        team.getMembers().remove(member);
+        member.getTeams().remove(team);
+        teamRepository.save(team);
+        responseText.append(BotMessage.USER_REMOVED_FROM_TEAM.format(username)).append("\n");
+    }
+
+    /// Iteration on given usernames for adding or removing from team
+    @Nullable SendMessage updateTeamMembers(String userNames, Team team, BotCommand command) {
+        if (team == null)
+            return null;
+        Matcher matcher = USERNAME_PATTERN.matcher(userNames);
         StringBuilder responseText = new StringBuilder();
         var response = new SendMessage();
-        while (matcher.find()) {
-            String username = matcher.group(1).trim();
-            var member = memberRepository.findByUsername(username);
-            if (member.isEmpty()) {
-                responseText.append(BotMessage.USER_HAS_NOT_STARTED.format(username)).append("\n");
-                continue;
+        if (command == BotCommand.ADD_MEMBER)
+            while (matcher.find()) {
+                String username = matcher.group(1).trim();
+                addMemberToTeam(username, responseText, team);
             }
-            if (!team.getMembers().contains(member.get())) {
-                responseText.append(BotMessage.USER_HAS_NOT_BEEN_ADDED_TO_TEAM.format(username)).append("\n");
-                continue;
+        else if (command == BotCommand.REMOVE_MEMBER)
+            while (matcher.find()) {
+                String username = matcher.group(1).trim();
+                removeMemberFromTeam(username, responseText, team);
             }
-            team.getMembers().remove(member.get());
-            member.get().getTeams().remove(team);
-            teamRepository.save(team);
-            responseText.append(BotMessage.USER_REMOVED_FROM_TEAM.format(username)).append("\n");
-        }
+        if (responseText.isEmpty())
+            return null;
         response.setText(responseText.toString());
         return response;
     }

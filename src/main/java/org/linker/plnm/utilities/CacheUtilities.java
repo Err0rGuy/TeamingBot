@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 
 @Component
-public class CacheUtilities <K, V> {
+public class CacheUtilities <V> {
 
-    private final Cache<String, Map<K, V>> cache;
+    private final Cache<String, Map<String, V>> cache;
 
     private final int expirationTimeInMinutes = 5;
 
@@ -21,7 +21,7 @@ public class CacheUtilities <K, V> {
         .build();
     }
 
-    public Map<K, V> get(String key) {
+    public Map<String, V> get(String key) {
         return cache.getIfPresent(key);
     }
 
@@ -29,7 +29,7 @@ public class CacheUtilities <K, V> {
         return cache.asMap().containsKey(key);
     }
 
-    public void put(String key, Map<K, V> value) {
+    public void put(String key, Map<String, V> value) {
         cache.put(key, value);
     }
 

@@ -6,10 +6,19 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 
 public class MenuManager {
 
+    @NotNull
     public static InlineKeyboardMarkup startMenu() {
         var commandsBtn = KeyboardBuilder.buildButton("❖ Commands...", BotCommand.COMMANDS.str());
         var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action menu", BotCommand.TASKS_MENU_NEW.str());
         return KeyboardBuilder.buildVerticalMenu(commandsBtn, taskMenuBtn);
+    }
+
+    @NotNull
+    public static InlineKeyboardMarkup editTeamMenu(String teamName) {
+        var renameBtn = KeyboardBuilder.buildButton("➾ Rename Team", BotCommand.RENAME_TEAM.str() + " " + teamName);
+        var addMemberBtn = KeyboardBuilder.buildButton("➾ Add Member", BotCommand.ADD_MEMBER.str() + " " + teamName);
+        var removeMemberBtn = KeyboardBuilder.buildButton("➾ Remove Member", BotCommand.REMOVE_MEMBER.str() + " " + teamName);
+        return KeyboardBuilder.buildVerticalMenu(renameBtn, addMemberBtn, removeMemberBtn);
     }
 
     @NotNull

@@ -1,15 +1,13 @@
 package org.linker.plnm.bot.services;
 
-import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
-import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.TeamRepository;
 import org.linker.plnm.utilities.CacheUtilities;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -19,13 +17,13 @@ public class PendingOperation {
 
     private final TeamRepository teamRepository;
 
-    private final CacheUtilities<String, String> cacheUtilities;
+    private final CacheUtilities<Object> cacheUtilities;
 
     private final TeamingActions teamingActions;
 
     public PendingOperation(
             TeamRepository teamRepository,
-            CacheUtilities<String, String> cacheUtilities,
+            CacheUtilities<Object> cacheUtilities,
             TeamingActions teamingActions
     ) {
         this.teamRepository = teamRepository;
@@ -38,45 +36,44 @@ public class PendingOperation {
         return chatId.toString() + "|" + userId.toString();
     }
 
-    /// Caching future operations
-    @NotNull SendMessage addToPending(Long chatId, Long userId, String teamName, String operation, String argName) {
-        SendMessage response = new SendMessage();
-        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
-            response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-            return response;
-        }
-        if(operation.equals(BotCommand.REMOVE_MEMBER.str()) && !teamRepository.teamHasMember(teamName, chatId)){
-            response.setText(BotMessage.TEAM_HAS_NO_MEMBER.format(teamName));
-            return response;
-        }
+
+    /// Caching future operations with team name
+    void addToPending(Long chatId, Long userId, String operation, Object value) {
         String key = getCacheKey(chatId, userId);
-        Map<String, String> toBeSavedOperation = new HashMap<>();
-        toBeSavedOperation.put(teamName, operation);
-        cacheUtilities.put(key, toBeSavedOperation);
-        response.setText(BotMessage.ASK_FOR_ARG.format(argName));
-        return response;
+        Map<String, Object> toBeSaved = new HashMap<>();
+        toBeSaved.put(operation, value);
+        cacheUtilities.put(key, toBeSaved);
     }
 
+    boolean existsInPending(Long chatId, Long userId) {
+        return cacheUtilities.exists(getCacheKey(chatId, userId));
+    }
 
     /// Performing cached operation
-    @Transactional SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
+    @Transactional @Nullable SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
         SendMessage response = new SendMessage();
         String key = getCacheKey(chatId, userId);
 
-        Map<String, String> savedOperation = cacheUtilities.get(key);
+        Map<String, Object> savedOperation = cacheUtilities.get(key);
         cacheUtilities.remove(key);
-        Map.Entry<String, String> entry = savedOperation.entrySet().iterator().next();
-        String teamName = entry.getKey();
-        String operation = entry.getValue();
+        Map.Entry<String, Object> entry = savedOperation.entrySet().iterator().next();
+        String operation = entry.getKey();
+        String teamName = "";
+        if (entry.getValue() instanceof String)
+            teamName = (String) entry.getValue();
 
         Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
-        if (teamOpt.isEmpty()) return null;
-        Team team = teamOpt.get();
+        Team team = teamOpt.orElse(null);
         BotCommand command = BotCommand.getCommand(operation);
         switch (command) {
-            case ADD_MEMBER -> response = teamingActions.addMemberToTeam(argument, team);
+            case ADD_MEMBER, REMOVE_MEMBER -> response = teamingActions.updateTeamMembers(argument, team, command);
             case RENAME_TEAM -> response = teamingActions.renameTeam(argument, team, chatId);
-            case REMOVE_MEMBER -> response = teamingActions.removeMemberFromTeam(argument, team);
+            case CREATE_TEAM_TASK -> {}
+            case REMOVE_TEAM_TASK -> {}
+            case CREATE_MEMBER_TASK -> {}
+            case REMOVE_MEMBER_TASK -> {}
+            case CH_TEAM_TASK_STATUS -> {}
+            case CH_MEMBER_TASK_STATUS -> {}
         }
         return response;
     }

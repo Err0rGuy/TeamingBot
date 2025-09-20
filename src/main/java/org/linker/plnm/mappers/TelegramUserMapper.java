@@ -1,5 +1,6 @@
 package org.linker.plnm.mappers;
 
+import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.entities.Member;
 import org.telegram.telegrambots.meta.api.objects.User;
 
@@ -7,7 +8,7 @@ import java.util.Optional;
 
 public class TelegramUserMapper {
 
-    public static Optional<Member> mapToMember(User user) {
+    public static Optional<Member> mapToMember(@NotNull User user) {
         var member = Member.builder()
                 .telegramId(user.getId())
                 .firstName(user.getFirstName())
