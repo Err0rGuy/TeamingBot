@@ -27,7 +27,7 @@ public class Team {
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany(fetch =  FetchType.EAGER)
+    @ManyToMany(fetch =  FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "team_members",
             joinColumns = @JoinColumn(name = "team_id"),

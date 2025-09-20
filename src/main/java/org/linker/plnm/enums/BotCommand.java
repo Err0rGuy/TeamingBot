@@ -16,6 +16,7 @@ public enum BotCommand {
     ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
     REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
     TASKS_MENU("/tasks_menu", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK,CommandType.GROUP_CMD)),
+    /// Returns tasks menu in a new message
     TASKS_MENU_NEW("/tasks_menu_new", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK,CommandType.GROUP_CMD)),
     CREATE_TASK_MENU("menu:createTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),
     REMOVE_TASK_MENU("menu:removeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.GROUP_CMD)),

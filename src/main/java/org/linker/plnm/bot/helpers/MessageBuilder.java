@@ -32,13 +32,6 @@ public class MessageBuilder {
     }
 
     @NotNull
-    public static SendMessage buildMessage(long chatId, String text, String parseMode, InlineKeyboardMarkup markup){
-        SendMessage sendMessage = buildMessage(chatId, text, parseMode);
-        sendMessage.setReplyMarkup(markup);
-        return sendMessage;
-    }
-
-    @NotNull
     public static SendMessage buildMessage(long chatId, int replyToMessageId, String text, String parseMode, InlineKeyboardMarkup markup){
          SendMessage sendMessage = buildMessage(chatId, replyToMessageId, text, parseMode);
          sendMessage.setReplyMarkup(markup);

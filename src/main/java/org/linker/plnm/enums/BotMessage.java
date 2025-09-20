@@ -5,7 +5,7 @@ import org.linker.plnm.utilities.IOUtilities;
 
 public enum BotMessage {
     START_RESPONSE(IOUtilities.readFile("static/botStart.html")),
-    HINT_RESPONSE(IOUtilities.readFile("static/botCommands.html")),
+    COMMANDS_LIST(IOUtilities.readFile("static/botCommands.html")),
     ACTIONS_MENU_HEADER("What do you want to do?"),
     TASKS_MENU_HEADER("⦿ Select an option"),
     TASK_CREATION_MENU_HEADER("\uD83D\uDD8A Create a new task"),
@@ -16,6 +16,7 @@ public enum BotMessage {
     TEAM_RENAMED("✅ Team '%s' renamed to '%s' "),
     ASK_FOR_EDIT_OPTIONS("❔ What do you want to do with team '%s'?"),
     ASK_FOR_ARG("Okay, Send me the %s"),
+    ASK_FOR_TASKS("Send the list of tasks as follows: "),
     USER_ADDED_TO_TEAM("✅ Success to add @%s"),
     USER_REMOVED_FROM_TEAM("✅ Success to remove @%s"),
     USER_HAS_NOT_STARTED("❌ The user @%s has not started the bot yet."),
