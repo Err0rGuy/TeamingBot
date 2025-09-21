@@ -9,14 +9,12 @@ import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.mappers.TelegramUserMapper;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import java.util.*;
@@ -26,11 +24,11 @@ import java.util.regex.Pattern;
 @Service
 public class TeamingActions {
 
+    private final PendingCache cache;
+
     private final TemplateEngine renderEngine;
 
     private final TeamRepository teamRepository;
-
-    private final PendingOperation pendingOperation;
 
     private final MemberRepository memberRepository;
 
@@ -42,18 +40,17 @@ public class TeamingActions {
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            TemplateEngine renderEngine,
-            PendingOperation pendingOperation
+            TemplateEngine renderEngine, PendingCache cache
     ) {
+        this.cache = cache;
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
-        this.pendingOperation = pendingOperation;
     }
 
     /// Ask user for team name and adding to pending operations
-    @NotNull SendMessage askForEditingArg(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
+    @NotNull SendMessage askingTeamEditArg(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
         SendMessage response = new SendMessage();
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -63,24 +60,9 @@ public class TeamingActions {
             response.setText(BotMessage.TEAM_HAS_NO_MEMBER.format(teamName));
             return response;
         }
-        pendingOperation.addToPending(chatId, userId, command.str(), teamName);
+        cache.addToPending(chatId, userId, command, teamName);
         response.setText(BotMessage.ASK_FOR_ARG.format(argName));
         return response;
-    }
-
-    /// On bot start
-    @Nullable SendMessage onBotStart(@NotNull User fromUser, Long chatId, Integer messageId) {
-        var optMember = TelegramUserMapper.mapToMember(fromUser);
-        if (optMember.isEmpty()) return null;
-        var member = optMember.get();
-        if (!memberRepository.existsById(member.getTelegramId()))
-            memberRepository.save(member);
-        return MessageBuilder.buildMessage(chatId, messageId, BotMessage.START_RESPONSE.format(), "HTML", MenuManager.startMenu());
-    }
-
-    /// Hint message
-    @NotNull SendMessage commandsList(Long chatId) {
-        return MessageBuilder.buildMessage(chatId, BotMessage.COMMANDS_LIST.format(), "HTML");
     }
 
     /// Creating a new team

@@ -47,11 +47,11 @@ public class Task {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private TaskStatus status = TaskStatus.TODO;
+    private TaskStatus status = TaskStatus.UNDONE;
 
     public enum TaskStatus {
-        TODO,
-        DOING,
+        UNDONE,
+        IN_PROGRESS,
         DONE
     }
 }

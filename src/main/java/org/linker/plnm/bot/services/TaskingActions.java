@@ -1,6 +1,6 @@
 package org.linker.plnm.bot.services;
 
-import jakarta.validation.constraints.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.ChatGroupRepository;
@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 @Service
 public class TaskingActions {
 
-    private final PendingOperation pendingOperation;
+    private final PendingCache cache;
 
     private final MemberRepository memberRepository;
 
@@ -22,30 +22,28 @@ public class TaskingActions {
 
 
     public TaskingActions(
-            PendingOperation pendingOperation,
+            PendingCache cache,
             MemberRepository memberRepository,
             TeamRepository teamRepository,
             ChatGroupRepository chatGroupRepository
     ) {
-        this.pendingOperation = pendingOperation;
+        this.cache = cache;
         this.memberRepository = memberRepository;
         this.teamRepository = teamRepository;
         this.chatGroupRepository = chatGroupRepository;
     }
 
-    @NotNull SendMessage askForArgs(Long chatId, Long userId, String argName, BotCommand command) {
+    @NotNull SendMessage askForArgs(Long chatId, Long userId, String argName, @NotNull BotCommand command) {
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_FOR_ARG.format(argName));
-        pendingOperation.addToPending(chatId, userId, command.str(), null);
+        cache.addToPending(chatId, userId, command, null);
         return response;
     }
 
-    SendMessage askForTasks(Long chatId, Long userId, String teamName, BotCommand command) {
+    SendMessage askForTasks(Long chatId, Long userId, String teamName, @NotNull BotCommand command) {
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_FOR_TASKS.format());
-        pendingOperation.addToPending(chatId, userId, command.str(), teamName);
+        cache.addToPending(chatId, userId, command, teamName);
         return response;
     }
-
-
 }

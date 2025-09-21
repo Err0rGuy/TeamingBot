@@ -52,7 +52,6 @@ public class Bot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-        updateHandler.setSender(this);
         executorService = Executors.newFixedThreadPool(
           Runtime.getRuntime().availableProcessors() * 2
         );
@@ -80,7 +79,7 @@ public class Bot extends TelegramLongPollingBot {
         }
         if (message == null || !message.hasText())
             return null;
-        return new Message();
+        return message;
     }
 
     /// Setting required message properties for different message types
@@ -114,16 +113,15 @@ public class Bot extends TelegramLongPollingBot {
         Message message = compressMessage(update);
         if (message == null)
             return;
-        long chatId = message.getChatId();
-        long userId = message.getFrom().getId();
-        int messageId = message.getMessageId();
-        int threadId = message.getMessageThreadId();
-        String text = message.getText();
-        boolean updateIsCallback = update.hasCallbackQuery();
+        var chatId = message.getChatId();
+        var userId = message.getFrom().getId();
+        var messageId = message.getMessageId();
+        var threadId = message.getMessageThreadId();
+        var text = message.getText();
+        var updateIsCallback = update.hasCallbackQuery();
         String[] parts = text.trim().split("\\s+");
         String command = parts[0].replace("@" + getBotUsername(), "");
         String argument = (parts.length > 1) ? parts[1] : null;
-
         if (updateIsCallback && BotCommand.isCallback(command))
             response = updateHandler.callBackUpdateHandler(message, command, argument, chatId, userId, messageId);
         else if (!updateIsCallback && BotCommand.isText(command))
