@@ -14,6 +14,12 @@ public class MenuManager {
     }
 
     @NotNull
+    public static InlineKeyboardMarkup startMenuInPrivateChat() {
+        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands...", BotCommand.COMMANDS.str());
+        return KeyboardBuilder.buildVerticalMenu(commandsBtn);
+    }
+
+    @NotNull
     public static InlineKeyboardMarkup editTeamMenu(String teamName) {
         var renameBtn = KeyboardBuilder.buildButton("➾ Rename Team", BotCommand.RENAME_TEAM.str() + " " + teamName);
         var addMemberBtn = KeyboardBuilder.buildButton("➾ Add Member", BotCommand.ADD_MEMBER.str() + " " + teamName);
