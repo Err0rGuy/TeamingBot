@@ -4,10 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
+import org.linker.plnm.bot.helpers.MessageParser;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.enums.TelegramUserRole;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -16,8 +16,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.util.regex.Pattern;
 
 @Service @Slf4j
 public class UpdateHandler {
@@ -28,7 +26,9 @@ public class UpdateHandler {
 
     private final MessageCaster messageCaster;
 
-    private final MainOperation mainOperation;
+    private final MessageParser messageParser;
+
+    private final MainActions mainActions;
 
     private final TeamingActions teamingActions;
 
@@ -36,13 +36,11 @@ public class UpdateHandler {
 
     private final PendingOperation pendingOperation;
 
-    private final static Pattern TEAM_CALL_PATTERN = Pattern.compile("#([\\p{L}0-9_]+)");
-
     public UpdateHandler(
             @Lazy AbsSender sender,
             PendingCache cache,
-            MessageCaster messageCaster,
-            MainOperation mainOperation,
+            MessageCaster messageCaster, MessageParser messageParser,
+            MainActions mainActions,
             TeamingActions teamingActions,
             TaskingActions taskingActions,
             PendingOperation pendingOperation
@@ -50,7 +48,8 @@ public class UpdateHandler {
         this.sender = sender;
         this.cache = cache;
         this.messageCaster = messageCaster;
-        this.mainOperation = mainOperation;
+        this.messageParser = messageParser;
+        this.mainActions = mainActions;
         this.teamingActions = teamingActions;
         this.taskingActions = taskingActions;
         this.pendingOperation = pendingOperation;
@@ -67,8 +66,8 @@ public class UpdateHandler {
         if(cache.existsInPending(chatId, userId) &&
                 isAdmin(chatId, userId))
             response = pendingOperation.performPendedOperation(chatId, userId, text);
-        else if (TEAM_CALL_PATTERN.matcher(text).find())
-            messageCaster.findingCastMessages(TEAM_CALL_PATTERN.matcher(text), chatId, message);
+        else if (messageParser.foundTeamCall(text))
+            messageCaster.findingCastMessages(messageParser.findTeamNames(text), chatId, message);
         return response;
     }
 
@@ -80,11 +79,11 @@ public class UpdateHandler {
             return null;
         switch (command) {
             case COMMANDS ->
-                    response = mainOperation.commandsList(chatId);
+                    response = mainActions.commandsList(chatId);
             case RENAME_TEAM ->
-                    response = teamingActions.askingTeamEditArg(chatId, userId, arg, command, "new name");
+                    response = teamingActions.validateEditingAction(chatId, userId, arg, command, "new name");
             case REMOVE_MEMBER, ADD_MEMBER ->
-                    response = teamingActions.askingTeamEditArg(chatId, userId, arg, command, "username's");
+                    response = teamingActions.validateEditingAction(chatId, userId, arg, command, "username's");
             case CREATE_TASK_MENU ->
                     response = MessageBuilder.buildEditMessageText(chatId, messageId, BotMessage.TASK_CREATION_MENU_HEADER.format(),
                             MenuManager.taskCreationMenu());
@@ -101,9 +100,9 @@ public class UpdateHandler {
                     response = MessageBuilder.buildMessage(chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(),
                             MenuManager.taskingActionsMenu());
             case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CH_TEAM_TASK_STATUS ->
-                    response = taskingActions.askForArgs(chatId, userId, "teams names",command);
+                    response = taskingActions.askForArgs(chatId, userId, "team name",command);
             case CREATE_MEMBER_TASK, REMOVE_MEMBER_TASK, CH_MEMBER_TASK_STATUS ->
-                    response = taskingActions.askForArgs(chatId, userId, "members usernames", command);
+                    response = taskingActions.askForArgs(chatId, userId, "usernames", command);
         }
         return response;
     }
@@ -114,9 +113,9 @@ public class UpdateHandler {
         BotCommand command = BotCommand.getCommand(commandTxt);
         if (illegalCommand(command, chatId, userId, message)) return null;
         switch (command) {
-            case START -> response = mainOperation.onBotStart(message.getFrom(), chatId, messageId, isGroup(message));
-            case COMMANDS -> response = mainOperation.commandsList(chatId);
-            case TASKS_MENU -> response = mainOperation.tasksMenu(chatId, messageId);
+            case START -> response = mainActions.onBotStart(message.getFrom(), chatId, messageId, isGroup(message));
+            case COMMANDS -> response = mainActions.commandsList(chatId);
+            case TASKS_MENU -> response = mainActions.tasksMenu(chatId, messageId);
             case CREATE_TEAM -> response = teamingActions.createTeam(chatId, message.getChat().getTitle(), arg);
             case REMOVE_TEAM -> response = teamingActions.removeTeam(chatId, arg);
             case EDIT_TEAM_MENU -> response = teamingActions.editTeam(chatId, arg);

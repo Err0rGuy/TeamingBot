@@ -1,6 +1,5 @@
 package org.linker.plnm.bot.services;
 
-import jakarta.annotation.PostConstruct;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
@@ -13,8 +12,6 @@ import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -47,15 +44,14 @@ public class MessageCaster {
     }
 
     /// Finding team calls in user message(Multi/Broad Cast message)
-    void findingCastMessages(Matcher matcher, Long chatId, Message message) {
+    void findingCastMessages(String[] teamNames, Long chatId, Message message) {
         Optional<ChatGroup> chatGroup = chatGroupRepository.findByChatId(chatId);
         List<BotApiMethodMessage> messages = new ArrayList<>();
         Set<Member> members = new HashSet<>();
         Set<Long> sentIds = new HashSet<>();
         if (chatGroup.isEmpty())
             return;
-        while (matcher.find()) {
-            String teamName = matcher.group(1);
+        for (var teamName : teamNames) {
             Optional<Team> team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
             if (team.isPresent()) {
                 members = team.get().getMembers();

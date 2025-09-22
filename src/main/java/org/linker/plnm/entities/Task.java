@@ -10,15 +10,8 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(
-        name = "tasks",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "member_id"})
-        }
-)
 public class Task {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)

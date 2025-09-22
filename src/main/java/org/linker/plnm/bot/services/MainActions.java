@@ -13,11 +13,11 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 @Service
-public class MainOperation {
+public class MainActions {
 
     private final MemberRepository memberRepository;
 
-    public MainOperation(MemberRepository memberRepository) {
+    public MainActions(MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
     }
 
