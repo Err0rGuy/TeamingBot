@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
+import org.linker.plnm.bot.helpers.MessageParser;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
@@ -18,7 +19,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -34,23 +34,24 @@ public class TeamingActions {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private static final Pattern USERNAME_PATTERN = Pattern.compile("@([A-Za-z0-9_]{5,32})");
+    private final MessageParser messageParser;
 
     public TeamingActions(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            TemplateEngine renderEngine, PendingCache cache
-    ) {
+            TemplateEngine renderEngine, PendingCache cache,
+            MessageParser messageParser) {
         this.cache = cache;
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
+        this.messageParser = messageParser;
     }
 
     /// Ask user for team name and adding to pending operations
-    @NotNull SendMessage askingTeamEditArg(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
+    @NotNull SendMessage validateEditingAction(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
         SendMessage response = new SendMessage();
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -208,22 +209,18 @@ public class TeamingActions {
     }
 
     /// Iteration on given usernames for adding or removing from team
-    @Nullable SendMessage updateTeamMembers(String userNames, Team team, BotCommand command) {
+    @Nullable SendMessage updateTeamMembers(String text, Team team, BotCommand command) {
         if (team == null)
             return null;
-        Matcher matcher = USERNAME_PATTERN.matcher(userNames);
+        var userNames = messageParser.findUsernames(text);
         StringBuilder responseText = new StringBuilder();
         var response = new SendMessage();
         if (command == BotCommand.ADD_MEMBER)
-            while (matcher.find()) {
-                String username = matcher.group(1).trim();
+            for (String username : userNames)
                 addMemberToTeam(username, responseText, team);
-            }
         else if (command == BotCommand.REMOVE_MEMBER)
-            while (matcher.find()) {
-                String username = matcher.group(1).trim();
+            for (String username : userNames)
                 removeMemberFromTeam(username, responseText, team);
-            }
         if (responseText.isEmpty())
             return null;
         response.setText(responseText.toString());

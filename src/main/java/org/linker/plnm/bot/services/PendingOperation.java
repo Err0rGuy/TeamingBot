@@ -1,6 +1,7 @@
 package org.linker.plnm.bot.services;
 
 import org.jetbrains.annotations.NotNull;
+import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.repositories.TeamRepository;
@@ -8,26 +9,31 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class PendingOperation {
 
-    private final TeamRepository teamRepository;
-
     private final PendingCache cache;
+
+    private final TeamRepository teamRepository;
 
     private final TeamingActions teamingActions;
 
+    private final TaskingActions taskingActions;
+
     public PendingOperation(
-            TeamRepository teamRepository,
             PendingCache cache,
-            TeamingActions teamingActions
+            TeamRepository teamRepository,
+            TeamingActions teamingActions,
+            TaskingActions taskingActions
     ) {
-        this.teamRepository = teamRepository;
         this.cache = cache;
+        this.teamRepository = teamRepository;
         this.teamingActions = teamingActions;
+        this.taskingActions = taskingActions;
     }
 
 
@@ -51,14 +57,14 @@ public class PendingOperation {
         Map.Entry<String, Object> entry = savedOperation.entrySet().iterator().next();
         String operation = entry.getKey();
         BotCommand command = BotCommand.getCommand(operation);
+        Object value = entry.getValue();
+        if (isTeamingOperation(command))
+            if (value instanceof String teamName)
+                response = performPendedTeamOperation(command, teamName, argument, chatId);
+        else if (isTaskingOperation(command))
+            if (value == null)
+                response = performPendedTaskOperation(command, chatId, userId, argument);
 
-        if (isTeamingOperation(command)) {
-            String teamName = (String) entry.getValue();
-            response = performPendedTeamOperation(command, teamName, argument, chatId);
-        }
-        else if (isTaskingOperation(command)) {
-
-        }
         return response;
     }
 
@@ -75,22 +81,15 @@ public class PendingOperation {
     }
 
     @Transactional @Nullable
-    protected SendMessage performPendedTaskOperation(Long chatId, Long userId, String argument) {
+    protected SendMessage performPendedTaskOperation(@NotNull BotCommand command, Object value, Long chatId, Long userId, String argument) {
         SendMessage response = null;
-        String key = cache.getCacheKey(chatId, userId);
-        Map<String, Object> savedOperation = cache.getFromPending(key);
-        cache.removeFromPending(key);
-        Map.Entry<String, Object> entry = savedOperation.entrySet().iterator().next();
-        String operation = entry.getKey();
-        BotCommand command = BotCommand.getCommand(operation);
-        switch (command) {
-            case CREATE_TEAM_TASK -> {}
-            case REMOVE_TEAM_TASK -> {}
-            case CREATE_MEMBER_TASK -> {}
-            case REMOVE_MEMBER_TASK -> {}
-            case CH_TEAM_TASK_STATUS -> {}
-            case CH_MEMBER_TASK_STATUS -> {}
+        taskingActions.askForTasks(chatId, userId, argument, command);
+        if (value == null)
+            response = taskingActions.askForTasks(chatId, userId, argument, command);
+        else if (value instanceof List<?> || value instanceof Team) {
+
         }
+
         return response;
     }
 }

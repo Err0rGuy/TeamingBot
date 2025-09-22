@@ -19,6 +19,7 @@ public enum BotMessage {
     ASK_FOR_TASKS("Send the list of tasks as follows: "),
     USER_ADDED_TO_TEAM("✅ Success to add @%s"),
     USER_REMOVED_FROM_TEAM("✅ Success to remove @%s"),
+    NO_USER_MATCHES("❌ No user matches the given usernames"),
     USER_HAS_NOT_STARTED("❌ The user @%s has not started the bot yet."),
     YOU_DID_NOT_STARTED("❌ You didn't start the bot yet."),
     USER_ALREADY_ADDED_TO_TEAM("❎ The user @%s already become a member in this team."),
