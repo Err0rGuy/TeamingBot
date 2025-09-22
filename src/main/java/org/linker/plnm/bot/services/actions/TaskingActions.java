@@ -2,12 +2,11 @@ package org.linker.plnm.bot.services.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.MessageParser;
-import org.linker.plnm.bot.services.PendingCache;
+import org.linker.plnm.bot.helpers.PendingCache;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
@@ -26,20 +25,14 @@ public class TaskingActions {
 
     private final TeamRepository teamRepository;
 
-    private final ChatGroupRepository chatGroupRepository;
-    private final MessageParser messageParser;
-
     public TaskingActions(
             PendingCache cache,
             MemberRepository memberRepository,
-            TeamRepository teamRepository,
-            ChatGroupRepository chatGroupRepository,
-            MessageParser messageParser) {
+            TeamRepository teamRepository
+            ) {
         this.cache = cache;
         this.memberRepository = memberRepository;
         this.teamRepository = teamRepository;
-        this.chatGroupRepository = chatGroupRepository;
-        this.messageParser = messageParser;
     }
 
     private boolean isTeamTaskingOperation(@NotNull BotCommand command) {
@@ -67,7 +60,7 @@ public class TaskingActions {
             Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(text, chatId);
             teamOpt.ifPresent(team -> cache.addToPending(chatId, userId, command, team));
         }  else if (isMemberTaskingOperation(command)) {
-            var usernames = messageParser.findUsernames(text);
+            var usernames = MessageParser.findUsernames(text);
             List<Member> members = new ArrayList<>();
             for (String username : usernames) {
                 var memberOpt = memberRepository.findByUsername(username);

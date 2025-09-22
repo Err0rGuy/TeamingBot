@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.bot.helpers.MessageParser;
-import org.linker.plnm.bot.services.PendingCache;
+import org.linker.plnm.bot.helpers.PendingCache;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
@@ -34,20 +34,18 @@ public class TeamingActions {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private final MessageParser messageParser;
-
     public TeamingActions(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            TemplateEngine renderEngine, PendingCache cache,
-            MessageParser messageParser) {
+            TemplateEngine renderEngine,
+            PendingCache cache
+            ) {
         this.cache = cache;
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
-        this.messageParser = messageParser;
     }
 
     /// Ask user for team name and adding to pending operations
@@ -220,7 +218,7 @@ public class TeamingActions {
     public SendMessage updateTeamMembers(String text, Team team, BotCommand command) {
         if (team == null)
             return null;
-        var userNames = messageParser.findUsernames(text);
+        var userNames = MessageParser.findUsernames(text);
         StringBuilder responseText = new StringBuilder();
         var response = new SendMessage();
         if (command == BotCommand.ADD_MEMBER)

@@ -4,8 +4,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.linker.plnm.bot.services.handlers.ArgumentUpdateHandler;
+import org.linker.plnm.bot.services.handlers.CallbackUpdateHandler;
+import org.linker.plnm.bot.services.handlers.MessageUpdateHandler;
 import org.linker.plnm.bot.settings.BotSettings;
 import org.linker.plnm.enums.BotCommand;
+import org.springframework.context.annotation.Lazy;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -27,18 +31,37 @@ public class Bot extends TelegramLongPollingBot {
 
     private ExecutorService executorService;
 
-    private final UpdateHandler updateHandler;
+    private final ArgumentUpdateHandler argumentUpdateHandler;
 
-    public Bot(DefaultBotOptions options, @NotNull BotSettings botSettings, UpdateHandler updateHandler) {
+    private final MessageUpdateHandler messageUpdateHandler;
+
+    private final CallbackUpdateHandler callBackUpdateHandler;
+
+    public Bot(
+            DefaultBotOptions options,
+            @NotNull BotSettings botSettings,
+            ArgumentUpdateHandler argumentUpdateHandler,
+            MessageUpdateHandler messageUpdateHandler,
+            CallbackUpdateHandler callBackUpdateHandler
+    ) {
         super(options, botSettings.getToken());
         this.botSettings = botSettings;
-        this.updateHandler = updateHandler;
+        this.argumentUpdateHandler = argumentUpdateHandler;
+        this.messageUpdateHandler = messageUpdateHandler;
+        this.callBackUpdateHandler = callBackUpdateHandler;
     }
 
-    public Bot(@NotNull BotSettings botSettings, UpdateHandler updateHandler) {
+    public Bot(
+            @NotNull BotSettings botSettings,
+            ArgumentUpdateHandler argumentUpdateHandler,
+            MessageUpdateHandler messageUpdateHandler,
+            CallbackUpdateHandler callBackUpdateHandler
+    ) {
         super(botSettings.getToken());
         this.botSettings = botSettings;
-        this.updateHandler = updateHandler;
+        this.argumentUpdateHandler = argumentUpdateHandler;
+        this.messageUpdateHandler = messageUpdateHandler;
+        this.callBackUpdateHandler = callBackUpdateHandler;
     }
 
     @PostConstruct
@@ -81,8 +104,11 @@ public class Bot extends TelegramLongPollingBot {
 
     /// Setting required message properties for different message types
     @Nullable private BotApiMethod<?> settingRequiredMessageProperties(
-            BotApiMethod<?> message, Long chatId, Integer messageId, Integer threadId) {
-        switch (message) {
+            BotApiMethod<?> response, @NotNull Message message) {
+        long chatId = message.getChatId();
+        int messageId = message.getMessageId();
+        int threadId = message.getMessageThreadId();
+        switch (response) {
             case null -> {
                 return null;
             }
@@ -99,9 +125,9 @@ public class Bot extends TelegramLongPollingBot {
                 forwardMsg.setChatId(chatId);
                 forwardMsg.setMessageThreadId(threadId);
             }
-            default -> throw new IllegalStateException("Unexpected value: " + message);
+            default -> throw new IllegalStateException("Unexpected value: " + response);
         }
-        return message;
+        return response;
     }
 
     /// Processing received update
@@ -110,29 +136,29 @@ public class Bot extends TelegramLongPollingBot {
         Message message = compressMessage(update);
         if (message == null)
             return;
-        var chatId = message.getChatId();
-        var userId = message.getFrom().getId();
-        var messageId = message.getMessageId();
-        var threadId = message.getMessageThreadId();
         var text = message.getText();
         var updateIsCallback = update.hasCallbackQuery();
         String[] parts = text.trim().split("\\s+");
-        String command = parts[0].replace("@" + getBotUsername(), "");
+        String commandTxt = parts[0].replace("@" + getBotUsername(), "");
         String argument = (parts.length > 1) ? parts[1] : null;
-        if (updateIsCallback && BotCommand.isCallback(command))
-            response = updateHandler.callBackUpdateHandler(message, command, argument, chatId, userId, messageId);
-        else if (!updateIsCallback && BotCommand.isText(command))
-            response = updateHandler.commandUpdateHandler(message, command, argument, chatId, userId, messageId);
+        BotCommand command = BotCommand.getCommand(commandTxt);
+        if (updateIsCallback && BotCommand.isCallback(commandTxt))
+            response = callBackUpdateHandler.handle(message, argument, command);
+        else if (!updateIsCallback && BotCommand.isText(commandTxt))
+            response = messageUpdateHandler.handle(message, argument, command);
         else /// It's not a command, maybe is a team call or is an argument from the previous operation
-            response = updateHandler.argumentUpdateHandler(message, text, chatId, userId);
-        response = settingRequiredMessageProperties(response, chatId, messageId, threadId);
+            response = argumentUpdateHandler.handle(message);
+        response = settingRequiredMessageProperties(response, message);
 
         if (response == null)
             return;
         try {
             execute(response);
         } catch (TelegramApiException e) {
-            log.error("Failed to execute response for chatId={} messageId={} at the end of process", chatId, messageId, e);
+            log.error(
+                "Failed to execute response for chatId={} messageId={} at the end of process",
+                message.getChat().getId(), message.getMessageId(), e
+            );
         }
     }
 }
