@@ -1,10 +1,11 @@
-package org.linker.plnm.bot.services;
+package org.linker.plnm.bot.services.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.bot.helpers.MessageParser;
+import org.linker.plnm.bot.services.PendingCache;
 import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
@@ -19,7 +20,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import java.util.*;
-import java.util.regex.Pattern;
 
 @Service
 public class TeamingActions {
@@ -51,7 +51,8 @@ public class TeamingActions {
     }
 
     /// Ask user for team name and adding to pending operations
-    @NotNull SendMessage validateEditingAction(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
+    @NotNull
+    public SendMessage validateEditingAction(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
         SendMessage response = new SendMessage();
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -67,7 +68,8 @@ public class TeamingActions {
     }
 
     /// Creating a new team
-    @NotNull SendMessage createTeam(Long chatId, String groupName, String teamName) {
+    @NotNull
+    public SendMessage createTeam(Long chatId, String groupName, String teamName) {
         SendMessage response = new SendMessage();
         ChatGroup group;
         if (teamName == null || teamName.isEmpty()) {
@@ -89,7 +91,8 @@ public class TeamingActions {
     }
 
     /// Removing an existing team
-    @NotNull SendMessage removeTeam(Long chatId, String teamName) {
+    @NotNull
+    public SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
         if (teamName == null || teamName.isEmpty()) {
             response.setText(BotMessage.REMOVE_TEAM_NO_ARG.format());
@@ -105,7 +108,8 @@ public class TeamingActions {
     }
 
     /// List all teams in the group
-    @Transactional(readOnly = true) @NotNull SendMessage showTeams(Long chatId) {
+    @Transactional(readOnly = true) @NotNull
+    public SendMessage showTeams(Long chatId) {
         SendMessage response = new SendMessage();
         var teams = teamRepository.findTeamByChatGroupChatId(chatId);
         if (teams.isEmpty()) {
@@ -120,7 +124,8 @@ public class TeamingActions {
     }
 
     /// List all the user teams
-    @Transactional(readOnly = true) @NotNull SendMessage myTeams(Long chatId, Long userId) {
+    @Transactional(readOnly = true) @NotNull
+    public SendMessage myTeams(Long chatId, Long userId) {
         SendMessage response = new SendMessage();
         var memberOpt = memberRepository.findById(userId);
         if (memberOpt.isEmpty()){
@@ -137,7 +142,8 @@ public class TeamingActions {
     }
 
     /// Editing an existing team, (edit name and members)
-    @NotNull SendMessage editTeam(Long chatId, String teamName) {
+    @NotNull
+    public SendMessage editTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
         if (teamName == null || teamName.isEmpty()) {
             response.setText(BotMessage.EDIT_TEAM_NO_ARG.format());
@@ -153,7 +159,8 @@ public class TeamingActions {
     }
 
     ///  Renaming an existing team
-    @Nullable SendMessage renameTeam(String newName, Team team, Long chatId) {
+    @Nullable
+    public SendMessage renameTeam(String newName, Team team, Long chatId) {
         if (team == null)
             return null;
         SendMessage response = new SendMessage();
@@ -209,7 +216,8 @@ public class TeamingActions {
     }
 
     /// Iteration on given usernames for adding or removing from team
-    @Nullable SendMessage updateTeamMembers(String text, Team team, BotCommand command) {
+    @Nullable
+    public SendMessage updateTeamMembers(String text, Team team, BotCommand command) {
         if (team == null)
             return null;
         var userNames = messageParser.findUsernames(text);

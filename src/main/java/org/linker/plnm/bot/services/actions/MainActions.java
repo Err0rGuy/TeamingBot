@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.services;
+package org.linker.plnm.bot.services.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +22,8 @@ public class MainActions {
     }
 
     /// On bot start
-    @Nullable SendMessage onBotStart(@NotNull User fromUser, Long chatId, Integer messageId, boolean isGroupChat) {
+    @Nullable
+    public SendMessage onBotStart(@NotNull User fromUser, Long chatId, Integer messageId, boolean isGroupChat) {
         var optMember = TelegramUserMapper.mapToMember(fromUser);
         if (optMember.isEmpty()) return null;
         var member = optMember.get();
@@ -33,12 +34,14 @@ public class MainActions {
     }
 
     /// Hint message
-    @NotNull SendMessage commandsList(Long chatId) {
+    @NotNull
+    public SendMessage commandsList(Long chatId) {
         return MessageBuilder.buildMessage(chatId, BotMessage.COMMANDS_LIST.format(), "HTML");
     }
 
     /// Tasks action menu
-    @NotNull SendMessage tasksMenu(Long chatId, Integer messageId) {
+    @NotNull
+    public SendMessage tasksMenu(Long chatId, Integer messageId) {
        return MessageBuilder.buildMessage(
                 chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
     }

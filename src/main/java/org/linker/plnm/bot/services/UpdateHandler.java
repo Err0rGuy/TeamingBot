@@ -1,21 +1,20 @@
 package org.linker.plnm.bot.services;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.bot.helpers.MessageParser;
+import org.linker.plnm.bot.helpers.MessageValidation;
+import org.linker.plnm.bot.services.actions.MainActions;
+import org.linker.plnm.bot.services.actions.TaskingActions;
+import org.linker.plnm.bot.services.actions.TeamingActions;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.enums.TelegramUserRole;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
 import org.telegram.telegrambots.meta.bots.AbsSender;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Service @Slf4j
 public class UpdateHandler {
@@ -64,7 +63,7 @@ public class UpdateHandler {
     public BotApiMethod<?> argumentUpdateHandler(Message message, String text, Long chatId, Long userId) {
         BotApiMethod<?> response = null;
         if(cache.existsInPending(chatId, userId) &&
-                isAdmin(chatId, userId))
+                MessageValidation.isAdmin(chatId, userId, sender))
             response = pendingOperation.performPendedOperation(chatId, userId, text);
         else if (messageParser.foundTeamCall(text))
             messageCaster.findingCastMessages(messageParser.findTeamNames(text), chatId, message);
@@ -75,7 +74,7 @@ public class UpdateHandler {
     public BotApiMethod<?> callBackUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId, Integer messageId) {
         BotApiMethod<?> response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
-        if (illegalCommand(command, chatId, userId, message))
+        if (MessageValidation.illegalCommand(command, chatId, userId, message, sender))
             return null;
         switch (command) {
             case COMMANDS ->
@@ -111,9 +110,10 @@ public class UpdateHandler {
     public BotApiMethod<?> commandUpdateHandler(Message message, String commandTxt, String arg, Long chatId, Long userId, Integer messageId) {
         BotApiMethod<?> response = null;
         BotCommand command = BotCommand.getCommand(commandTxt);
-        if (illegalCommand(command, chatId, userId, message)) return null;
+        if (MessageValidation.illegalCommand(command, chatId, userId, message, sender))
+            return null;
         switch (command) {
-            case START -> response = mainActions.onBotStart(message.getFrom(), chatId, messageId, isGroup(message));
+            case START -> response = mainActions.onBotStart(message.getFrom(), chatId, messageId, MessageValidation.isGroup(message));
             case COMMANDS -> response = mainActions.commandsList(chatId);
             case TASKS_MENU -> response = mainActions.tasksMenu(chatId, messageId);
             case CREATE_TEAM -> response = teamingActions.createTeam(chatId, message.getChat().getTitle(), arg);
@@ -125,28 +125,4 @@ public class UpdateHandler {
         return response;
     }
 
-    /// Checking if user is admin
-    private boolean isAdmin(@NotNull Long chatId, Long userId) {
-        GetChatMember getChatMember = new GetChatMember();
-        getChatMember.setChatId(chatId.toString());
-        getChatMember.setUserId(userId);
-        try {
-            ChatMember chatMember = sender.execute(getChatMember);
-            String status = chatMember.getStatus();
-            return TelegramUserRole.ADMIN.isEqualTo(status) || TelegramUserRole.CREATOR.isEqualTo(status);
-        } catch (TelegramApiException e) {
-            log.info("Failed to execute Multi/Broad cast message for chatId={}", chatId, e);
-            return false;
-        }
-    }
-
-    /// Check if message comes from a group chat
-    private boolean isGroup(@NotNull Message message) {
-        return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
-    }
-
-    /// Checking if command is allowed to proceed
-    private boolean illegalCommand(@NotNull BotCommand command, Long chatId, Long userId, Message message) {
-        return command.isPrivileged() && !isAdmin(chatId, userId) || command.isGroupCmd() && !isGroup(message);
-    }
 }
