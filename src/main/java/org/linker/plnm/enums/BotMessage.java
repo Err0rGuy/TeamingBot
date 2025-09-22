@@ -33,7 +33,10 @@ public enum BotMessage {
     NO_TEAM_FOUND("❕ No team found!"),
     EXPIRED_OPERATION("❌ Expired Operation!"),
     SUPER_GROUP_BROADCAST_MESSAGE("💬 New message at *%s*:\n\n%s\n\n👉 [Jump to message](%s)"),
-    NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message at *%s* \uD83D\uDC47");
+    NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message at *%s* \uD83D\uDC47"),
+    MESSAGE_SENT_TO_TEAM("✅ Message sent to '%s' team members."),
+    MESSAGE_SENT_TO_GLOBAL(
+            "✅ Message was sent to global.\n" + "⚠ Only users who started the bot will receive the message.");
 
 
     private final String template;

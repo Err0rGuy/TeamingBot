@@ -11,32 +11,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@Component
+
 public class MessageParser {
-
-    private final MemberRepository memberRepository;
-
-    private final TeamRepository teamRepository;
 
     private final static Pattern TEAM_CALL_PATTERN = Pattern.compile("#([\\p{L}0-9_]+)");
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("@([A-Za-z0-9_]{5,32})");
 
-    public MessageParser(MemberRepository memberRepository, TeamRepository teamRepository) {
-        this.memberRepository = memberRepository;
-        this.teamRepository = teamRepository;
-    }
-
-    public boolean foundTeamCall(String text) {
+    public static boolean foundTeamCall(String text) {
         return TEAM_CALL_PATTERN.matcher(text).find();
     }
 
-    public boolean foundUserName(String text) {
+    public static boolean foundUserName(String text) {
         return USERNAME_PATTERN.matcher(text).find();
     }
 
     @NotNull
-    public String[] findUsernames(String text) {
+    public static String[] findUsernames(String text) {
         var matcher = USERNAME_PATTERN.matcher(text);
         List<String> usernames = new ArrayList<>();
         while (matcher.find())
@@ -45,7 +36,7 @@ public class MessageParser {
     }
 
     @NotNull
-    public String[] findTeamNames(String text) {
+    public static String[] findTeamNames(String text) {
         var matcher = TEAM_CALL_PATTERN.matcher(text);
         List<String> teamNames = new ArrayList<>();
         while (matcher.find())

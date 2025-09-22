@@ -5,7 +5,9 @@ target/
 !**/src/test/**/target/
 src/main/resources/application.yaml
 src/test/resources/application.yaml
-
+package-lock.json
+package.json
+node_modules
 ### STS ###
 .apt_generated
 .classpath
