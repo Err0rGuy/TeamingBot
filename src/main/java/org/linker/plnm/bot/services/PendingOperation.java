@@ -1,7 +1,8 @@
 package org.linker.plnm.bot.services;
 
 import org.jetbrains.annotations.NotNull;
-import org.linker.plnm.entities.Member;
+import org.linker.plnm.bot.services.actions.TaskingActions;
+import org.linker.plnm.bot.services.actions.TeamingActions;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.repositories.TeamRepository;
@@ -49,7 +50,8 @@ public class PendingOperation {
     }
 
     /// Performing cached operation
-    @Transactional @Nullable SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
+    @Transactional @Nullable
+    public SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
         SendMessage response = null;
         String key = cache.getCacheKey(chatId, userId);
         Map<String, Object> savedOperation = cache.getFromPending(key);
@@ -62,8 +64,7 @@ public class PendingOperation {
             if (value instanceof String teamName)
                 response = performPendedTeamOperation(command, teamName, argument, chatId);
         else if (isTaskingOperation(command))
-            if (value == null)
-                response = performPendedTaskOperation(command, chatId, userId, argument);
+                response = performPendedTaskOperation(command, value,chatId, userId, argument);
 
         return response;
     }

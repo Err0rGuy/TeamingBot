@@ -1,7 +1,8 @@
-package org.linker.plnm.bot.services;
+package org.linker.plnm.bot.services.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.MessageParser;
+import org.linker.plnm.bot.services.PendingCache;
 import org.linker.plnm.entities.Member;
 import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
@@ -52,14 +53,15 @@ public class TaskingActions {
     }
 
 
-    @NotNull SendMessage askForArgs(Long chatId, Long userId, String argName, @NotNull BotCommand command) {
+    @NotNull
+    public SendMessage askForArgs(Long chatId, Long userId, String argName, @NotNull BotCommand command) {
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_FOR_ARG.format(argName));
         cache.addToPending(chatId, userId, command, null);
         return response;
     }
 
-    SendMessage askForTasks(Long chatId, Long userId, String text, @NotNull BotCommand command) {
+    public SendMessage askForTasks(Long chatId, Long userId, String text, @NotNull BotCommand command) {
         SendMessage response = new SendMessage();
         if (isTeamTaskingOperation(command)) {
             Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(text, chatId);

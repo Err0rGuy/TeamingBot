@@ -19,7 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 @Service @Slf4j
@@ -73,6 +72,7 @@ public class MessageCaster {
 
 
     /// Sending multicast message to members
+    @NotNull
     private List<BotApiMethodMessage> sendMultiCast(Set<Member> members, @NotNull Message broadCastMessage, Set<Long> sentIds) {
         List<BotApiMethodMessage> messagesToSend = new ArrayList<>();
         long groupChatId = broadCastMessage.getChatId();

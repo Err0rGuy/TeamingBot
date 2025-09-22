@@ -19,27 +19,27 @@ public class PendingCache {
     }
 
     /// Cached operation keys are the combination of chatId and userId separated with '|'
-    String getCacheKey(@NotNull Long chatId, @NotNull Long userId) {
+    public String getCacheKey(@NotNull Long chatId, @NotNull Long userId) {
         return chatId + "|" + userId;
     }
 
     /// Caching future operations with team name
-    void addToPending(Long chatId, Long userId, @NotNull BotCommand command, Object value) {
+    public void addToPending(Long chatId, Long userId, @NotNull BotCommand command, Object value) {
         String key = getCacheKey(chatId, userId);
         Map<String, Object> toBeSaved = new HashMap<>();
         toBeSaved.put(command.str(), value);
         cacheUtilities.put(key, toBeSaved);
     }
 
-    boolean existsInPending(Long chatId, Long userId) {
+    public boolean existsInPending(Long chatId, Long userId) {
         return cacheUtilities.exists(getCacheKey(chatId, userId));
     }
 
-    Map<String, Object> getFromPending(String key) {
+    public Map<String, Object> getFromPending(String key) {
         return cacheUtilities.get(key);
     }
 
-    void removeFromPending(String key) {
+    public void removeFromPending(String key) {
         cacheUtilities.remove(key);
     }
 }
