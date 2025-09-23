@@ -42,7 +42,7 @@ public class ArgumentUpdateHandler {
         BotApiMethod<?> response = null;
         if(cache.existsInPending(chatId, userId) && messageValidation.isAdmin(chatId, userId))
             response = pendingActions.performPendedOperation(chatId, userId, text);
-        else if (MessageParser.foundTeamCall(text))
+        else if (MessageParser.teamCallFounded(text))
             response = messageCaster.findingCastMessages(MessageParser.findTeamNames(text), chatId, message);
         return response;
     }

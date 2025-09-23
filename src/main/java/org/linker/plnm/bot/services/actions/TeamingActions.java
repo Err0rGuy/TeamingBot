@@ -1,5 +1,6 @@
 package org.linker.plnm.bot.services.actions;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.bot.helpers.MenuManager;
@@ -50,18 +51,22 @@ public class TeamingActions {
 
     /// Ask user for team name and adding to pending operations
     @NotNull
-    public SendMessage validateEditingAction(Long chatId, Long userId, String teamName, BotCommand command, String argName) {
+    public SendMessage askForEditTarget(Long chatId, Long userId, String teamName, BotCommand command) {
         SendMessage response = new SendMessage();
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)){
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
             return response;
         }
-        if(command.equals(BotCommand.REMOVE_MEMBER) && !teamRepository.teamHasMember(teamName, chatId)){
-            response.setText(BotMessage.TEAM_HAS_NO_MEMBER.format(teamName));
-            return response;
+        if (command.isTeamEditing())
+            response.setText(BotMessage.ASK_FOR_TEAM_NAME.format());
+        else if(command.isMemberEditing()) {
+            if(command.equals(BotCommand.REMOVE_MEMBER) && !teamRepository.teamHasMember(teamName, chatId)){
+                response.setText(BotMessage.TEAM_HAS_NO_MEMBER.format(teamName));
+                return response;
+            }
+            response.setText(BotMessage.ASK_FOR_USERNAMES.format());
         }
         cache.addToPending(chatId, userId, command, teamName);
-        response.setText(BotMessage.ASK_FOR_ARG.format(argName));
         return response;
     }
 
@@ -218,14 +223,18 @@ public class TeamingActions {
     public SendMessage updateTeamMembers(String text, Team team, BotCommand command) {
         if (team == null)
             return null;
-        var userNames = MessageParser.findUsernames(text);
-        StringBuilder responseText = new StringBuilder();
         var response = new SendMessage();
+        StringBuilder responseText = new StringBuilder();
+        var usernames = MessageParser.findUsernames(text);
+        if (usernames.length == 0) {
+            response.setText(BotMessage.NO_USERNAME_GIVEN.format());
+            return response;
+        }
         if (command == BotCommand.ADD_MEMBER)
-            for (String username : userNames)
+            for (String username : usernames)
                 addMemberToTeam(username, responseText, team);
         else if (command == BotCommand.REMOVE_MEMBER)
-            for (String username : userNames)
+            for (String username : usernames)
                 removeMemberFromTeam(username, responseText, team);
         if (responseText.isEmpty())
             return null;
