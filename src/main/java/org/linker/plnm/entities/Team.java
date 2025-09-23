@@ -4,7 +4,9 @@ package org.linker.plnm.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Builder
@@ -14,12 +16,12 @@ import java.util.Set;
 @Getter
 @Setter
 @Table(
-        name = "teams",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"name", "chat_group_id"})
-        }
+    name = "teams",
+    uniqueConstraints = {
+            @UniqueConstraint(columnNames = {"name", "chat_group_id"})
+    }
 )
-public class Team {
+public class Team implements Assignee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

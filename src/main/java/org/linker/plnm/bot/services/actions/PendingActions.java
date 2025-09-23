@@ -58,19 +58,20 @@ public class PendingActions {
         Map.Entry<String, Object> entry = savedOperation.entrySet().iterator().next();
         String operation = entry.getKey();
         BotCommand command = BotCommand.getCommand(operation);
-        Object value = entry.getValue();
+        Object cachedValue = entry.getValue();
         if (isTeamingOperation(command))
-            if (value instanceof String teamName)
-                response = performPendedTeamOperation(command, teamName, argument, chatId);
+            response = performPendedTeamOperation(command, cachedValue, chatId, argument);
         else if (isTaskingOperation(command))
-                response = performPendedTaskOperation(command, value,chatId, userId, argument);
+                response = performPendedTaskOperation(command, cachedValue, chatId, userId, argument);
 
         return response;
     }
 
     @Transactional @Nullable
-    protected SendMessage performPendedTeamOperation(@NotNull BotCommand command, String teamName, String argument, Long chatId) {
+    protected SendMessage performPendedTeamOperation(@NotNull BotCommand command, Object cachedValue, Long chatId, String argument) {
         SendMessage response = null;
+        if (!(cachedValue instanceof String teamName))
+            return null;
         Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
         Team team = teamOpt.orElse(null);
         switch (command) {
@@ -80,16 +81,14 @@ public class PendingActions {
         return response;
     }
 
-    @Transactional @Nullable
-    protected SendMessage performPendedTaskOperation(@NotNull BotCommand command, Object value, Long chatId, Long userId, String argument) {
-        SendMessage response = null;
+    @Transactional @Nullable @SuppressWarnings("unchecked")
+    protected SendMessage performPendedTaskOperation(@NotNull BotCommand command, Object cachedValue, Long chatId, Long userId, String argument) {
+        SendMessage response;
         taskingActions.askForTasks(chatId, userId, argument, command);
-        if (value == null)
+        if (cachedValue == null)
             response = taskingActions.askForTasks(chatId, userId, argument, command);
-        else if (value instanceof List<?> || value instanceof Team) {
-
-        }
-
+        else
+             response = taskingActions.updateTasks(chatId, (List<String>) cachedValue, argument, command);
         return response;
     }
 }

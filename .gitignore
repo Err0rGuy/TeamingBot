@@ -1,13 +1,13 @@
 HELP.md
 target/
+build/
 .mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 src/main/resources/application.yaml
 src/test/resources/application.yaml
-package-lock.json
+node_modules/
 package.json
-node_modules
+package-lock.json
+
 ### STS ###
 .apt_generated
 .classpath
@@ -29,9 +29,6 @@ node_modules
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/

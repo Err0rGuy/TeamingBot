@@ -42,7 +42,7 @@ public class MessageValidation {
 
     /// Checking if command is allowed to proceed
     public boolean illegalCommand(@NotNull BotCommand command, Long chatId, Long userId, Message message) {
-        return command.isPrivileged() && !isAdmin(chatId, userId) || command.isGroupCmd() && !isGroup(message);
+        return command.isPrivileged() && !isAdmin(chatId, userId) || !command.isPrivileged() && !isGroup(message);
     }
 
 }

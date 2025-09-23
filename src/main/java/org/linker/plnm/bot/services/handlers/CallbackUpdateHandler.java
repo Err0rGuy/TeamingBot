@@ -46,31 +46,24 @@ public class CallbackUpdateHandler {
         if (messageValidation.illegalCommand(command, chatId, userId, message))
             return null;
         switch (command) {
-            case COMMANDS ->
-                    response = baseActions.commandsList(chatId);
-            case RENAME_TEAM ->
-                    response = teamingActions.validateEditingAction(chatId, userId, argument, command, "new name");
-            case REMOVE_MEMBER, ADD_MEMBER ->
-                    response = teamingActions.validateEditingAction(chatId, userId, argument, command, "username's");
-            case CREATE_TASK_MENU ->
-                    response = MessageBuilder.buildEditMessageText(chatId, messageId, BotMessage.TASK_CREATION_MENU_HEADER.format(),
-                            MenuManager.taskCreationMenu());
-            case REMOVE_TASK_MENU ->
-                    response = MessageBuilder.buildEditMessageText(chatId, messageId, BotMessage.TASK_DELETION_MENU_HEADER.format(),
-                            MenuManager.taskRemoveMenu());
-            case CH_TASK_STATUS_MENU ->
-                    response = MessageBuilder.buildEditMessageText(chatId, messageId, BotMessage.TASK_CH_STATUS_MENU_HEADER.format(),
-                            MenuManager.taskChangeStatusMenu());
-            case TASKS_MENU ->
-                    response = MessageBuilder.buildEditMessageText(chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(),
-                            MenuManager.taskingActionsMenu());
-            case TASKS_MENU_NEW ->
-                    response = MessageBuilder.buildMessage(chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(),
-                            MenuManager.taskingActionsMenu());
-            case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CH_TEAM_TASK_STATUS ->
-                    response = taskingActions.askForArgs(chatId, userId, "team name",command);
-            case CREATE_MEMBER_TASK, REMOVE_MEMBER_TASK, CH_MEMBER_TASK_STATUS ->
-                    response = taskingActions.askForArgs(chatId, userId, "usernames", command);
+            case COMMANDS -> response = baseActions.commandsList(chatId);
+            case RENAME_TEAM, REMOVE_MEMBER, ADD_MEMBER -> response = teamingActions.askForEditTarget(chatId, userId, argument, command);
+            case CREATE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
+                    BotMessage.TASK_CREATION_MENU_HEADER.format(), MenuManager.taskCreationMenu());
+            case REMOVE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
+                    BotMessage.TASK_DELETION_MENU_HEADER.format(), MenuManager.taskRemoveMenu());
+            case CH_TASK_STATUS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
+                    BotMessage.TASK_CH_STATUS_MENU_HEADER.format(), MenuManager.taskChangeStatusMenu());
+            case SEE_TASKS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
+                    BotMessage.TASK_CH_STATUS_MENU_HEADER.format(), MenuManager.seeTasksMenu());
+            case TASKS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
+                    BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
+            case TASKS_MENU_NEW -> response = MessageBuilder.buildMessage(chatId, messageId,
+                    BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
+            case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CH_TEAM_TASK_STATUS, CREATE_MEMBER_TASK, REMOVE_MEMBER_TASK,
+                 CH_MEMBER_TASK_STATUS, SEE_TEAM_TASKS, SEE_MEMBER_TASKS ->
+                    response = taskingActions.askForAssignee(chatId, userId, command);
+
         }
         return response;
     }

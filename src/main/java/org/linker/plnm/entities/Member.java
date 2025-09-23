@@ -4,7 +4,9 @@ package org.linker.plnm.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Builder
@@ -13,7 +15,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Member {
+public class Member implements Assignee {
     @Id
     private Long telegramId;
 
