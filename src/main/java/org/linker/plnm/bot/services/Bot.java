@@ -4,11 +4,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.linker.plnm.bot.helpers.MessageValidation;
 import org.linker.plnm.bot.services.handlers.ArgumentUpdateHandler;
 import org.linker.plnm.bot.services.handlers.CallbackUpdateHandler;
 import org.linker.plnm.bot.services.handlers.MessageUpdateHandler;
 import org.linker.plnm.bot.settings.BotSettings;
 import org.linker.plnm.enums.BotCommand;
+import org.linker.plnm.enums.BotMessage;
 import org.springframework.context.annotation.Lazy;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -145,7 +147,7 @@ public class Bot extends TelegramLongPollingBot {
         if (updateIsCallback && BotCommand.isCallback(commandTxt))
             response = callBackUpdateHandler.handle(message, argument, command);
         else if (!updateIsCallback && BotCommand.isText(commandTxt))
-            response = messageUpdateHandler.handle(message, argument, command);
+            response = messageUpdateHandler.handle(message, command);
         else /// It's not a command, maybe is a team call or is an argument from the previous operation
             response = argumentUpdateHandler.handle(message);
         response = settingRequiredMessageProperties(response, message);

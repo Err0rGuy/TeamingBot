@@ -40,9 +40,14 @@ public class MessageValidation {
         return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
     }
 
-    /// Checking if command is allowed to proceed
-    public boolean illegalCommand(@NotNull BotCommand command, Long chatId, Long userId, Message message) {
-        return command.isPrivileged() && !isAdmin(chatId, userId) || !command.isPrivileged() && !isGroup(message);
+    /// Checking if command is used in correct chat
+    public boolean illegalPrivateCommand(@NotNull BotCommand command, Message message) {
+        return !command.isPrivateChatAllowed() && !isGroup(message);
+    }
+
+    /// Checking if user can access this operation
+    public boolean lackOfAccess(@NotNull BotCommand command, Long chatId, Long userId) {
+        return command.isPrivileged() && !isAdmin(chatId, userId);
     }
 
 }

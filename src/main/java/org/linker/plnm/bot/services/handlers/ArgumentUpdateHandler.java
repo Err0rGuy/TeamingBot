@@ -39,9 +39,11 @@ public class ArgumentUpdateHandler {
         long chatId = message.getChatId();
         long userId = message.getFrom().getId();
         String text = message.getText();
+        String groupTitle = message.getChat().getTitle();
+        Integer messageId = message.getMessageId();
         BotApiMethod<?> response = null;
         if(cache.existsInPending(chatId, userId) && messageValidation.isAdmin(chatId, userId))
-            response = pendingActions.performPendedOperation(chatId, userId, text);
+            response = pendingActions.performPendedOperation(chatId, userId, messageId, text, groupTitle);
         else if (MessageParser.teamCallFounded(text))
             response = messageCaster.findingCastMessages(MessageParser.findTeamNames(text), chatId, message);
         return response;

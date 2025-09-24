@@ -16,24 +16,22 @@ public class Task {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @ManyToMany(fetch =  FetchType.EAGER)
+    @ManyToMany(fetch =  FetchType.EAGER) @Builder.Default
     @JoinTable(
             name = "team_tasks",
             joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "team_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"name", "team_id"})
+            inverseJoinColumns = @JoinColumn(name = "team_id")
     )
     private Set<Team> teams = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER) @Builder.Default
     @JoinTable(
             name = "member_tasks",
             joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "member_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"name", "member_id"})
+            inverseJoinColumns = @JoinColumn(name = "member_id")
     )
     private Set<Member> members = new HashSet<>();
 

@@ -15,7 +15,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Member implements Assignee {
+public class Member {
     @Id
     private Long telegramId;
 
@@ -26,9 +26,11 @@ public class Member implements Assignee {
 
     private String lastName;
 
+    @Builder.Default
     @ManyToMany(mappedBy = "members", cascade = {CascadeType.PERSIST})
     private Set<Team> teams = new HashSet<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "members",  cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Task> tasks = new HashSet<>();
 
