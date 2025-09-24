@@ -29,8 +29,8 @@ public class BaseActions {
         var member = optMember.get();
         if (!memberRepository.existsById(member.getTelegramId()))
             memberRepository.save(member);
-        InlineKeyboardMarkup markup = (isGroupChat) ? MenuManager.startMenu() : MenuManager.startMenuInPrivateChat();
-        return MessageBuilder.buildMessage(chatId, messageId, BotMessage.START_RESPONSE.format(), "HTML", markup);
+        return (isGroupChat) ? MenuManager.botStartMenu(chatId, messageId) : MenuManager.privateChatbotStartMenu(chatId, messageId);
+
     }
 
     /// Hint message
@@ -38,12 +38,4 @@ public class BaseActions {
     public SendMessage commandsList(Long chatId) {
         return MessageBuilder.buildMessage(chatId, BotMessage.COMMANDS_LIST.format(), "HTML");
     }
-
-    /// Tasks action menu
-    @NotNull
-    public SendMessage tasksMenu(Long chatId, Integer messageId) {
-       return MessageBuilder.buildMessage(
-                chatId, messageId, BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
-    }
-
 }

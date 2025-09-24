@@ -7,29 +7,29 @@ import java.util.stream.Collectors;
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.PRIVATE_CHAT_ALLOWED)),
     COMMANDS("/commands", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK, CommandType.PRIVATE_CHAT_ALLOWED)),
-    SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT)),
-    MY_TEAMS("/my_teams", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT)),
-    EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_EDITING)),
-    REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED, CommandType.TEXT)),
-    ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_EDITING)),
-    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_EDITING)),
-    TASKS_MENU("/tasks_menu", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
+    SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    MY_TEAMS("/my_teams", List.of(CommandType.UNPRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    ADD_MEMBER("/add_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    REMOVE_MEMBER("/remove_member", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
+    TASKS_MENU("/tasks_menu", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
+    TASKS_MENU_BACK("/tasks_menu_back", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
+    TEAMS_MENU("/teams_menu", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
+    TEAMS_MENU_BACK("/teams_menu_back", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
     /// Returns tasks menu in a new message
-    TASKS_MENU_NEW("/tasks_menu_new", List.of(CommandType.PRIVILEGED, CommandType.TEXT, CommandType.CALLBACK)),
     CREATE_TASK_MENU("menu:createTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
     REMOVE_TASK_MENU("menu:removeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
-    CH_TASK_STATUS_MENU("menu:chTaskStatus", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
     CREATE_MEMBER_TASK("/create_member_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION)),
     CREATE_TEAM_TASK("/create_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
     REMOVE_MEMBER_TASK("/remove_member_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION)),
     REMOVE_TEAM_TASK("/remove_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
-    CH_MEMBER_TASK_STATUS("/ch_member_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION)),
-    CH_TEAM_TASK_STATUS("/ch_team_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
-    SEE_TASKS_MENU("menu:seeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
-    SEE_TEAM_TASKS("/see_team_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
-    SEE_MEMBER_TASKS("/see_member_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION));
+    UPDATE_TASK_STATUS("/update_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
+    SHOW_TASKS_MENU("menu:seeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
+    SHOW_TEAM_TASKS("/see_team_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
+    SHOW_MEMBER_TASKS("/see_member_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION));
 
     public enum CommandType {
         PRIVATE_CHAT_ALLOWED,
@@ -37,7 +37,7 @@ public enum BotCommand {
         UNPRIVILEGED,
         CALLBACK,
         TEXT,
-        TEAM_EDITING,
+        TEAMING_ACTION,
         MEMBER_EDITING,
         TEAM_TASK_ACTION,
         MEMBER_TASK_ACTION
@@ -68,12 +68,12 @@ public enum BotCommand {
         return types.contains(CommandType.CALLBACK);
     }
 
-    public boolean isTeamEditing() {
-        return types.contains(CommandType.TEAM_EDITING);
+    public boolean isTeamingAction() {
+        return types.contains(CommandType.TEAMING_ACTION);
     }
 
-    public boolean isMemberEditing() {
-        return types.contains(CommandType.MEMBER_EDITING);
+    public boolean isTaskingAction() {
+        return isTeamTaskAction() || isMemberTaskAction();
     }
 
     public boolean isTeamTaskAction() {
@@ -90,6 +90,25 @@ public enum BotCommand {
 
     public boolean isPrivileged() {
         return types.contains(CommandType.PRIVILEGED);
+    }
+
+    public boolean isTaskCreation() {
+        return command.equals(BotCommand.CREATE_TEAM_TASK.str())
+                || command.equalsIgnoreCase(BotCommand.CREATE_MEMBER_TASK.str());
+    }
+
+    public boolean isTaskDeletion() {
+        return command.equals(BotCommand.REMOVE_TEAM_TASK.str())
+                || command.equalsIgnoreCase(BotCommand.REMOVE_MEMBER_TASK.str());
+    }
+
+    public boolean isTaskStatusChanging() {
+        return command.equals(BotCommand.UPDATE_TASK_STATUS.str());
+    }
+
+    public boolean isTaskViewing(){
+        return command.equals(BotCommand.SHOW_TEAM_TASKS.str())
+                || command.equalsIgnoreCase(BotCommand.SHOW_MEMBER_TASKS.str());
     }
 
     public boolean isPrivateChatAllowed() {

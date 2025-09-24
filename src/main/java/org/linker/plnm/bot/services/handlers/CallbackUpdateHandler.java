@@ -3,7 +3,6 @@ package org.linker.plnm.bot.services.handlers;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.MenuManager;
-import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.bot.helpers.MessageValidation;
 import org.linker.plnm.bot.services.actions.BaseActions;
 import org.linker.plnm.bot.services.actions.TaskingActions;
@@ -13,6 +12,7 @@ import org.linker.plnm.enums.BotMessage;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Service @Slf4j
@@ -43,26 +43,29 @@ public class CallbackUpdateHandler {
         long chatId = message.getChatId();
         long  userId = message.getFrom().getId();
         int messageId = message.getMessageId();
-        if (messageValidation.illegalCommand(command, chatId, userId, message))
-            return null;
+        if (messageValidation.lackOfAccess(command, message.getChatId(), message.getFrom().getId())) {
+            response = new SendMessage();
+            ((SendMessage) response).setText(BotMessage.ONLY_ADMIN.format());
+            return response;
+        }
         switch (command) {
             case COMMANDS -> response = baseActions.commandsList(chatId);
-            case RENAME_TEAM, REMOVE_MEMBER, ADD_MEMBER -> response = teamingActions.askForEditTarget(chatId, userId, argument, command);
-            case CREATE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
-                    BotMessage.TASK_CREATION_MENU_HEADER.format(), MenuManager.taskCreationMenu());
-            case REMOVE_TASK_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
-                    BotMessage.TASK_DELETION_MENU_HEADER.format(), MenuManager.taskRemoveMenu());
-            case CH_TASK_STATUS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
-                    BotMessage.TASK_CH_STATUS_MENU_HEADER.format(), MenuManager.taskChangeStatusMenu());
-            case SEE_TASKS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
-                    BotMessage.TASK_CH_STATUS_MENU_HEADER.format(), MenuManager.seeTasksMenu());
-            case TASKS_MENU -> response = MessageBuilder.buildEditMessageText(chatId, messageId,
-                    BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
-            case TASKS_MENU_NEW -> response = MessageBuilder.buildMessage(chatId, messageId,
-                    BotMessage.TASKS_MENU_HEADER.format(), MenuManager.taskingActionsMenu());
-            case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CH_TEAM_TASK_STATUS, CREATE_MEMBER_TASK, REMOVE_MEMBER_TASK,
-                 CH_MEMBER_TASK_STATUS, SEE_TEAM_TASKS, SEE_MEMBER_TASKS ->
-                    response = taskingActions.askForAssignee(chatId, userId, command);
+            case RENAME_TEAM -> response = teamingActions.askTeamNewName(chatId, userId, argument);
+            case REMOVE_MEMBER, ADD_MEMBER -> response = teamingActions.askUserNames(chatId, userId, argument, command);
+            case CREATE_TASK_MENU -> response = MenuManager.createTaskMenu(chatId, messageId);
+            case REMOVE_TASK_MENU -> response = MenuManager.removeTaskMenu(chatId, messageId);
+            case SHOW_TASKS_MENU -> response = MenuManager.showTasksMenu(chatId, messageId);
+            case TASKS_MENU -> response = MenuManager.tasksMenu(chatId, messageId);
+            case TASKS_MENU_BACK -> response = MenuManager.tasksMenuBack(chatId, messageId);
+            case TEAMS_MENU -> response = MenuManager.teamsMenu(chatId, messageId);
+            case TEAMS_MENU_BACK ->  response = MenuManager.teamsMenuBack(chatId, messageId);
+            case SHOW_TEAMS -> response = teamingActions.showTeams(chatId);
+            case MY_TEAMS -> response = teamingActions.myTeams(chatId, userId);
+            case CREATE_TEAM, REMOVE_TEAM, EDIT_TEAM_MENU -> response = teamingActions.askTeamName(chatId, userId, command);
+            case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CREATE_MEMBER_TASK,
+                 REMOVE_MEMBER_TASK, SHOW_TEAM_TASKS, SHOW_MEMBER_TASKS
+                    -> response = taskingActions.askForAssignee(chatId, userId, command);
+            case UPDATE_TASK_STATUS -> response = taskingActions.askTasksToChangeStatus();
 
         }
         return response;

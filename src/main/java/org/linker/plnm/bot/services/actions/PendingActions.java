@@ -2,16 +2,16 @@ package org.linker.plnm.bot.services.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.bot.helpers.PendingCache;
-import org.linker.plnm.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class PendingActions {
@@ -36,22 +36,10 @@ public class PendingActions {
         this.taskingActions = taskingActions;
     }
 
-
-    private boolean isTeamingOperation(@NotNull BotCommand command) {
-        return command.equals(BotCommand.RENAME_TEAM) || command.equals(BotCommand.ADD_MEMBER)
-                || command.equals(BotCommand.REMOVE_MEMBER);
-    }
-
-    private boolean isTaskingOperation(@NotNull BotCommand command) {
-        return command.equals(BotCommand.CREATE_TEAM_TASK) ||  command.equals(BotCommand.REMOVE_TEAM_TASK)
-                || command.equals(BotCommand.CREATE_MEMBER_TASK) || command.equals(BotCommand.REMOVE_MEMBER_TASK)
-                || command.equals(BotCommand.CH_TEAM_TASK_STATUS) || command.equals(BotCommand.CH_MEMBER_TASK_STATUS);
-    }
-
     /// Performing cached operation
     @Transactional @Nullable
-    public SendMessage performPendedOperation(Long chatId, Long userId, String argument) {
-        SendMessage response = null;
+    public BotApiMethod<?> performPendedOperation(Long chatId, Long userId, Integer messageId, String argument, String groupName) {
+        BotApiMethod<?> response = null;
         String key = cache.getCacheKey(chatId, userId);
         Map<String, Object> savedOperation = cache.getFromPending(key);
         cache.removeFromPending(key);
@@ -59,36 +47,61 @@ public class PendingActions {
         String operation = entry.getKey();
         BotCommand command = BotCommand.getCommand(operation);
         Object cachedValue = entry.getValue();
-        if (isTeamingOperation(command))
-            response = performPendedTeamOperation(command, cachedValue, chatId, argument);
-        else if (isTaskingOperation(command))
+        if (command.isTeamingAction())
+            response = performPendedTeamOperation(command, cachedValue, chatId, messageId, argument, groupName);
+        else if (command.isTaskingAction())
                 response = performPendedTaskOperation(command, cachedValue, chatId, userId, argument);
 
         return response;
     }
 
     @Transactional @Nullable
-    protected SendMessage performPendedTeamOperation(@NotNull BotCommand command, Object cachedValue, Long chatId, String argument) {
-        SendMessage response = null;
-        if (!(cachedValue instanceof String teamName))
-            return null;
-        Optional<Team> teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
-        Team team = teamOpt.orElse(null);
+    protected BotApiMethod<?> performPendedTeamOperation(
+            @NotNull BotCommand command, Object cachedValue, Long chatId,
+            Integer messageId, String argument, String groupName) {
+        BotApiMethod<?> response = null;
+        String teamName = "";
+        if (cachedValue != null)
+            teamName = cachedValue.toString();
         switch (command) {
-            case ADD_MEMBER, REMOVE_MEMBER -> response = teamingActions.updateTeamMembers(argument, team, command);
-            case RENAME_TEAM -> response = teamingActions.renameTeam(argument, team, chatId);
+            case CREATE_TEAM -> response = teamingActions.createTeam(chatId, groupName, argument);
+            case REMOVE_TEAM -> response = teamingActions.removeTeam(chatId, argument);
+            case EDIT_TEAM_MENU -> response = teamingActions.editTeam(chatId, messageId, argument);
+            case ADD_MEMBER, REMOVE_MEMBER -> response = teamingActions.updateTeamMembers(chatId, argument, teamName, command);
+            case RENAME_TEAM -> response = teamingActions.renameTeam(argument, teamName, chatId);
         }
         return response;
     }
 
     @Transactional @Nullable @SuppressWarnings("unchecked")
     protected SendMessage performPendedTaskOperation(@NotNull BotCommand command, Object cachedValue, Long chatId, Long userId, String argument) {
-        SendMessage response;
-        taskingActions.askForTasks(chatId, userId, argument, command);
-        if (cachedValue == null)
-            response = taskingActions.askForTasks(chatId, userId, argument, command);
-        else
-             response = taskingActions.updateTasks(chatId, (List<String>) cachedValue, argument, command);
+        SendMessage response = null;
+        if (cachedValue == null) {
+            response = taskingActions.cacheAssignee(chatId, userId, argument, command);
+            if (response != null) {
+                cache.removeFromPending(cache.getCacheKey(chatId, userId));
+                return response;
+            }
+            cachedValue = cache.getFromPending(cache.getCacheKey(chatId, userId));
+            if (command.isTaskCreation())
+                response = taskingActions.askTasksToAdd();
+            else if(command.isTaskDeletion())
+                response = taskingActions.askTasksToRemove();
+            else if (command.isTaskStatusChanging())
+                response = taskingActions.taskChangingStatus(argument, command);
+            else {
+                System.out.println("start");
+                response = taskingActions.taskViewing(chatId, (List<String>) cachedValue, command);
+            }
+        }
+        else {
+            if (command.isTaskCreation())
+                response = taskingActions.taskCreation(chatId, (List<String>) cachedValue, argument, command);
+            else if(command.isTaskDeletion())
+                response = taskingActions.taskDeletion(chatId, (List<String>) cachedValue, argument, command);
+            else if(command.isTaskStatusChanging())
+                response = taskingActions.taskChangingStatus(argument, command);
+        }
         return response;
     }
 }

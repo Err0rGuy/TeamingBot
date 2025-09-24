@@ -21,7 +21,7 @@ import java.util.Set;
             @UniqueConstraint(columnNames = {"name", "chat_group_id"})
     }
 )
-public class Team implements Assignee {
+public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,6 +29,7 @@ public class Team implements Assignee {
     @Column(nullable = false)
     private String name;
 
+    @Builder.Default
     @ManyToMany(fetch =  FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "team_members",
@@ -37,6 +38,7 @@ public class Team implements Assignee {
     )
     private Set<Member> members = new HashSet<>();
 
+    @Builder.Default
     @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Task> tasks = new HashSet<>();
 

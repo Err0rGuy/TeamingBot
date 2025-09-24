@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -16,18 +18,14 @@ public class MessageParser {
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("@([A-Za-z0-9_]{5,32})");
 
-    private static final Pattern TASK_DEFINE_PATTERN = Pattern.compile("~([^-]+)-(.+?)-([123])");
+    private static final Pattern TASK_INSERT_PATTERN = Pattern.compile("~([^-]+)-(.+?)-([123])");
+
+    private static final Pattern TASK_REMOVE_PATTERN = Pattern.compile("~([^\\s-]+)");
+
+    private static final Pattern TASK_STATUS_UPDATE_PATTERN = Pattern.compile("~([^\\s-]+)-([123])");
 
     public static boolean teamCallFounded(String text) {
         return TEAM_CALL_PATTERN.matcher(text).find();
-    }
-
-    public static boolean usernameFounded(String text) {
-        return USERNAME_PATTERN.matcher(text).find();
-    }
-
-    public static boolean taskFounded(String text) {
-        return TASK_DEFINE_PATTERN.matcher(text).find();
     }
 
     @NotNull
@@ -49,21 +47,51 @@ public class MessageParser {
     }
 
     @NotNull
-    public static List<Map<String, String>> findTasks(String text) {
-        var matcher = TASK_DEFINE_PATTERN.matcher(text);
-        List<Map<String, String>> tasks = new ArrayList<>();
-
-        while (matcher.find()) {
+    public static List<Map<String, String>> findTasksToInsert(String text) {
+        return extractTasks(text, TASK_INSERT_PATTERN, matcher -> {
             int statusNumber = Integer.parseInt(matcher.group(3).trim());
             Task.TaskStatus status = Task.TaskStatus.values()[statusNumber - 1];
+
             Map<String, String> task = new HashMap<>();
             task.put("name", matcher.group(1).trim());
             task.put("description", matcher.group(2).trim());
             task.put("status", status.name());
-            tasks.add(task);
-        }
+            return task;
+        });
+    }
 
+    @NotNull
+    public static List<Map<String, String>> findTasksToRemove(String text) {
+        return extractTasks(text, TASK_REMOVE_PATTERN, matcher -> {
+            Map<String, String> task = new HashMap<>();
+            task.put("name", matcher.group(1).trim());
+            return task;
+        });
+    }
+
+    @NotNull
+    public static List<Map<String, String>> findTasksToUpdateStatus(String text) {
+        return extractTasks(text, TASK_STATUS_UPDATE_PATTERN, matcher -> {
+            int statusNumber = Integer.parseInt(matcher.group(2).trim());
+            Task.TaskStatus status = Task.TaskStatus.values()[statusNumber - 1];
+
+            Map<String, String> task = new HashMap<>();
+            task.put("name", matcher.group(1).trim());
+            task.put("status", status.name());
+            return task;
+        });
+    }
+
+    @NotNull
+    private static List<Map<String, String>> extractTasks(String text, Pattern pattern, Function<Matcher, Map<String, String>> mapper) {
+        var matcher = pattern.matcher(text);
+        List<Map<String, String>> tasks = new ArrayList<>();
+        while (matcher.find()) {
+            tasks.add(mapper.apply(matcher));
+        }
         return tasks;
     }
+
+
 
 }
