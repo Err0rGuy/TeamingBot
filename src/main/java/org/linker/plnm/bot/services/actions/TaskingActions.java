@@ -78,34 +78,15 @@ public class TaskingActions {
     }
 
     @NotNull
-    private List<Task> parseToTasksToRemove(@NotNull List<Map<String, String>> tasksStrings) {
+    private List<Task> findTasksByName(@NotNull List<Map<String, String>> tasksStrings, StringBuilder responseTxt) {
         List<Task> taskObjs = new ArrayList<>();
         for (Map<String, String> taskStr : tasksStrings) {
             Optional<Task> task = taskRepository.findByName(taskStr.get("name"));
-            task.ifPresent(taskObjs::add);
+            task.ifPresentOrElse(
+                    taskObjs::add,
+                    () -> responseTxt.append(BotMessage.TASK_DOES_NOT_EXIST.format(taskStr.get("name"))).append("\n\n"));
         }
         return taskObjs;
-    }
-
-    @NotNull
-    private List<Task> parseToTasksToUpdateStatus(@NotNull List<Map<String, String>> tasksStrings) {
-        List<Task> taskObjs = new ArrayList<>();
-        for (Map<String, String> taskStr : tasksStrings) {
-            Optional<Task> taskOpt = taskRepository.findByName(taskStr.get("name"));
-            taskOpt.ifPresent(task -> {
-                task.setStatus(Task.TaskStatus.valueOf(taskStr.get("status")));
-                taskObjs.add(task);
-            });
-        }
-        return taskObjs;
-    }
-
-    private void missingTasks(@NotNull List<Task> tasks, List<Map<String, String>> tasksStrings, StringBuilder responseTxt){
-        List<String> taskObjNames = new ArrayList<>(tasks.stream().map(Task::getName).toList());
-        List<String> tasksNames =  new ArrayList<>(tasksStrings.stream().map(t -> t.get("name")).toList());
-        tasksNames.removeAll(taskObjNames);
-        for (String missedTask : tasksNames)
-            responseTxt.append(BotMessage.INCORRECT_TASK_DEFINED.format(missedTask)).append("\n\n");
     }
 
     @NotNull
@@ -123,7 +104,7 @@ public class TaskingActions {
         SendMessage response = new SendMessage();
         StringBuilder responseTxt = new StringBuilder();
         List<String> assigneeList = new ArrayList<>();
-        if (command.isTeamTaskAction()) {
+        if (command.isTeamTaskAction() && !command.equals(BotCommand.UPDATE_TASK_STATUS)) {
             if (!teamRepository.existsByNameAndChatGroupChatId(assignee, chatId)){
                 response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(assignee));
                 return response;
@@ -152,21 +133,22 @@ public class TaskingActions {
     public SendMessage askTasksToAdd() {
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_TASKS_TO_ADD.format());
-        response.setParseMode("HTML");
+        response.enableHtml(true);
         return response;
     }
 
     public SendMessage askTasksToRemove(){
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_TASKS_TO_REMOVE.format());
-        response.setParseMode("HTML");
+        response.enableHtml(true);
         return response;
     }
 
-    public SendMessage askTasksToChangeStatus() {
+    public SendMessage askTasksToChangeStatus(Long chatId, Long userId, BotCommand command) {
         SendMessage response = new SendMessage();
         response.setText(BotMessage.ASK_TASKS_TO_CHANGE_STATUS.format());
-        response.setParseMode("HTML");
+        response.enableHtml(true);
+        cache.addToPending(chatId, userId, command, null);
         return response;
     }
 
@@ -175,7 +157,7 @@ public class TaskingActions {
         StringBuilder responseTxt = new StringBuilder();
         List<Map<String, String>> tasksStrings = MessageParser.findTasksToInsert(tasks);
         List<Task> taskObjs = parseToTasksToAdd(tasksStrings);
-        if (taskObjs.isEmpty()) {
+        if (tasksStrings.isEmpty()) {
             response.setText(BotMessage.INCORRECT_TASK_DEFINITION.format());
             return response;
         }
@@ -186,7 +168,6 @@ public class TaskingActions {
             var members = parseToMemberObj(assignees);
             createMemberTask(members, taskObjs, responseTxt);
         }
-        missingTasks(taskObjs, tasksStrings, responseTxt);
         response.setText(responseTxt.toString());
         return response;
     }
@@ -195,7 +176,11 @@ public class TaskingActions {
         SendMessage response = new  SendMessage();
         StringBuilder responseTxt = new StringBuilder();
         List<Map<String, String>> tasksStrings = MessageParser.findTasksToRemove(tasks);
-        List<Task> taskObjs = parseToTasksToRemove(tasksStrings);
+        List<Task> taskObjs = findTasksByName(tasksStrings, responseTxt);
+        if (tasksStrings.isEmpty()) {
+            response.setText(BotMessage.INCORRECT_TASK_DEFINITION.format());
+            return response;
+        }
         if (command.equals(BotCommand.REMOVE_TEAM_TASK)) {
             var teams = parseToTeamObj(assignees, chatId);
             removeTeamTask(teams, taskObjs, responseTxt);
@@ -204,38 +189,45 @@ public class TaskingActions {
             var members = parseToMemberObj(assignees);
             removeMemberTask(members, taskObjs, responseTxt);
         }
-        missingTasks(taskObjs, tasksStrings, responseTxt);
         response.setText(responseTxt.toString());
         return response;
     }
 
-    public SendMessage taskChangingStatus(String tasks, @NotNull BotCommand command) {
+    public SendMessage taskChangingStatus(String tasks) {
         SendMessage response = new  SendMessage();
         StringBuilder responseTxt = new StringBuilder();
         List<Map<String, String>> tasksStrings = MessageParser.findTasksToUpdateStatus(tasks);
-        List<Task> taskObjs = parseToTasksToUpdateStatus(tasksStrings);
-        for (Task task : taskObjs) {
-            responseTxt.append(BotMessage.TASK_UPDATED.format()).append("\n\n");
-            taskRepository.save(task);
+        if (tasksStrings.isEmpty()) {
+            response.setText(BotMessage.INCORRECT_TASK_DEFINITION.format());
+            return response;
         }
-        missingTasks(taskObjs, tasksStrings, responseTxt);
+        for (Map<String, String> taskStr : tasksStrings) {
+            Optional<Task> task = taskRepository.findByName(taskStr.get("name"));
+            task.ifPresentOrElse(
+                    t -> {
+                        t.setStatus(Task.TaskStatus.valueOf(taskStr.get("status")));
+                        taskRepository.save(t);
+                        responseTxt.append(BotMessage.TASK_UPDATED.format(taskStr.get("name"))).append("\n\n");
+                    },
+                    () -> responseTxt.append(BotMessage.TASK_DOES_NOT_EXIST.format(taskStr.get("name"))).append("\n\n"));
+        }
         response.setText(responseTxt.toString());
         return response;
     }
 
-    public SendMessage taskViewing(Long chatId, List<String> assignees, @NotNull BotCommand command) {
-        System.out.println(command);
+    public SendMessage taskViewing(Long chatId, List<String> assignees, BotCommand command) {
         SendMessage response = new  SendMessage();
         StringBuilder responseTxt = new StringBuilder();
         if (command.equals(BotCommand.SHOW_TEAM_TASKS)) {
             var teams = parseToTeamObj(assignees, chatId);
-            showTeamTasks(teams, responseTxt);
+            showTeamTasks(teams.getFirst(), responseTxt);
         }
         else if(command.equals(BotCommand.SHOW_MEMBER_TASKS)) {
             var members = parseToMemberObj(assignees);
             showMemberTasks(members, responseTxt);
         }
         response.setText(responseTxt.toString());
+        response.setParseMode("HTML");
         return response;
     }
 
@@ -289,7 +281,7 @@ public class TaskingActions {
             team.getTasks().removeAll(new HashSet<>(tasks));
             tasks.forEach(task -> {
                 task.getTeams().remove(team);
-                responseTxt.append(BotMessage.TASK_REMOVED.format(task.getName()));
+                responseTxt.append(BotMessage.TASK_REMOVED.format(task.getName())).append("\n\n");
             });
         }
     }
@@ -299,21 +291,21 @@ public class TaskingActions {
             member.getTasks().removeAll(new HashSet<>(tasks));
             tasks.forEach(task -> {
                 task.getMembers().remove(member);
-                responseTxt.append(BotMessage.TASK_REMOVED.format(task.getName()));
+                responseTxt.append(BotMessage.TASK_REMOVED.format(task.getName())).append("\n\n");
             });
         }
     }
 
-    private void showTeamTasks(List<Team> teams, @NotNull StringBuilder responseTxt) {
+    private void showTeamTasks(Team team, @NotNull StringBuilder responseTxt) {
         Context context = new  Context();
-        context.setVariable("teams", teams);
-        responseTxt.append(renderEngine.process("showTeamTasks", context));
+        context.setVariable("team", team);
+        responseTxt.append(renderEngine.process("show_team_tasks", context));
     }
 
     private void showMemberTasks(List<Member> members, @NotNull StringBuilder responseTxt) {
         Context context = new  Context();
         context.setVariable("members", members);
-        responseTxt.append(renderEngine.process("showMemberTasks", context));
+        responseTxt.append(renderEngine.process("show_member_tasks", context));
     }
 
 }

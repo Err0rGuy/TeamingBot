@@ -61,11 +61,12 @@ public class CallbackUpdateHandler {
             case TEAMS_MENU_BACK ->  response = MenuManager.teamsMenuBack(chatId, messageId);
             case SHOW_TEAMS -> response = teamingActions.showTeams(chatId);
             case MY_TEAMS -> response = teamingActions.myTeams(chatId, userId);
-            case CREATE_TEAM, REMOVE_TEAM, EDIT_TEAM_MENU -> response = teamingActions.askTeamName(chatId, userId, command);
+            case CREATE_TEAM -> response = teamingActions.askNewTeamName(chatId, userId, command);
+            case REMOVE_TEAM, EDIT_TEAM_MENU -> response = teamingActions.askTeamName(chatId, userId, command);
             case CREATE_TEAM_TASK, REMOVE_TEAM_TASK, CREATE_MEMBER_TASK,
                  REMOVE_MEMBER_TASK, SHOW_TEAM_TASKS, SHOW_MEMBER_TASKS
                     -> response = taskingActions.askForAssignee(chatId, userId, command);
-            case UPDATE_TASK_STATUS -> response = taskingActions.askTasksToChangeStatus();
+            case UPDATE_TASK_STATUS -> response = taskingActions.askTasksToChangeStatus(chatId, userId, command);
 
         }
         return response;

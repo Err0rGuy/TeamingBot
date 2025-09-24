@@ -6,6 +6,9 @@
         • No tasks defined!
     </th:block>
     <th:block th:each="task : ${member.tasks}">
-        • <b th:text="${task.name}"></b>
+        • <b th:text="'Name: ' + ${task.name}"></b>
+        • <b th:text="'Description: ' + ${task.description}"></b>
+        • <b th:text="'Status: ' + ${task.status}"></b>
+        <b>-----------------------------</b>
     </th:block>
 </th:block>

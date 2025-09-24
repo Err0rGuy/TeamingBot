@@ -35,8 +35,9 @@ public class PendingCache {
         return cacheUtilities.exists(getCacheKey(chatId, userId));
     }
 
-    public Map<String, Object> getFromPending(String key) {
-        return cacheUtilities.get(key);
+    public Map.Entry<String, Object> getFromPending(String key) {
+        Map<String, Object> savedOperation = cacheUtilities.get(key);
+        return savedOperation.entrySet().iterator().next();
     }
 
     public void removeFromPending(String key) {
