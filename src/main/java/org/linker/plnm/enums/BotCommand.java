@@ -26,7 +26,7 @@ public enum BotCommand {
     CREATE_TEAM_TASK("/create_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
     REMOVE_MEMBER_TASK("/remove_member_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION)),
     REMOVE_TEAM_TASK("/remove_team_task", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
-    UPDATE_TASK_STATUS("/update_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
+    UPDATE_TASK_STATUS("/update_task_status", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
     SHOW_TASKS_MENU("menu:seeTask", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK)),
     SHOW_TEAM_TASKS("/see_team_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAM_TASK_ACTION)),
     SHOW_MEMBER_TASKS("/see_member_tasks", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.MEMBER_TASK_ACTION));

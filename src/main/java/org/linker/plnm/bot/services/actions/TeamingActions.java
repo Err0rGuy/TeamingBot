@@ -13,6 +13,7 @@ import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
+import org.linker.plnm.repositories.TaskRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,8 @@ public class TeamingActions {
 
     private final MemberRepository memberRepository;
 
+    private final TaskRepository taskRepository;
+
     private final ChatGroupRepository chatGroupRepository;
 
     public TeamingActions(
@@ -41,13 +44,14 @@ public class TeamingActions {
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
             TemplateEngine renderEngine,
-            PendingCache cache
-            ) {
+            PendingCache cache, TaskRepository taskRepository
+    ) {
         this.cache = cache;
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.renderEngine = renderEngine;
+        this.taskRepository = taskRepository;
     }
 
     public SendMessage askTeamNewName(Long chatId, Long userId, String teamName) {
@@ -55,7 +59,7 @@ public class TeamingActions {
         if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId))
             response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         else
-            response.setText(BotMessage.ASK_FOR_TEAM_NAME.format());
+            response.setText(BotMessage.ASK_NEW_TEAM_NAME.format());
         cache.addToPending(chatId, userId, BotCommand.RENAME_TEAM, teamName);
         return response;
     }
@@ -79,6 +83,13 @@ public class TeamingActions {
         return response;
     }
 
+    public SendMessage askNewTeamName(Long chatId, Long userId, BotCommand command) {
+        SendMessage response = new SendMessage();
+        response.setText(BotMessage.ASK_NEW_TEAM_NAME.format());
+        cache.addToPending(chatId, userId, command, null);
+        return response;
+    }
+
     /// Creating a new team
     @NotNull
     public SendMessage createTeam(Long chatId, String groupName, String teamName) {
@@ -91,6 +102,7 @@ public class TeamingActions {
             return response;
         }
         Team team = new Team();
+        teamName = teamName.replace(" ", "");
         team.setName(teamName);
         team.setChatGroup(group);
         teamRepository.save(team);
@@ -102,12 +114,15 @@ public class TeamingActions {
     @NotNull
     public SendMessage removeTeam(Long chatId, String teamName) {
         SendMessage response = new SendMessage();
-        if (!teamRepository.existsByNameAndChatGroupChatId(teamName, chatId)) {
-            response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-            return response;
-        }
-        teamRepository.deleteTeamByNameAndChatGroupChatId(teamName, chatId);
-        response.setText(BotMessage.TEAM_REMOVED.format(teamName));
+        Optional<Team>teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
+        teamOpt.ifPresentOrElse(
+            team -> {
+                memberRepository.deleteAllByTeamId(team.getId());
+                taskRepository.deleteAllByTeamId(team.getId());
+                teamRepository.delete(team);
+                response.setText(BotMessage.TEAM_REMOVED.format(teamName));
+            },
+            () -> response.setText(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)));
         return response;
     }
 
@@ -170,6 +185,7 @@ public class TeamingActions {
             response.setText(BotMessage.TEAM_ALREADY_EXISTS.format(newName));
             return response;
         }
+        newName = newName.replace(" ", "");
         String oldName = team.getName();
         team.setName(newName);
         teamRepository.save(team);

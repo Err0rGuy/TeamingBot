@@ -41,12 +41,11 @@ public class PendingActions {
     public BotApiMethod<?> performPendedOperation(Long chatId, Long userId, Integer messageId, String argument, String groupName) {
         BotApiMethod<?> response = null;
         String key = cache.getCacheKey(chatId, userId);
-        Map<String, Object> savedOperation = cache.getFromPending(key);
+        Map.Entry<String, Object> savedOperation = cache.getFromPending(key);
         cache.removeFromPending(key);
-        Map.Entry<String, Object> entry = savedOperation.entrySet().iterator().next();
-        String operation = entry.getKey();
+        String operation = savedOperation.getKey();
         BotCommand command = BotCommand.getCommand(operation);
-        Object cachedValue = entry.getValue();
+        Object cachedValue = savedOperation.getValue();
         if (command.isTeamingAction())
             response = performPendedTeamOperation(command, cachedValue, chatId, messageId, argument, groupName);
         else if (command.isTaskingAction())
@@ -82,15 +81,15 @@ public class PendingActions {
                 cache.removeFromPending(cache.getCacheKey(chatId, userId));
                 return response;
             }
-            cachedValue = cache.getFromPending(cache.getCacheKey(chatId, userId));
+            cachedValue = cache.getFromPending(cache.getCacheKey(chatId, userId)).getValue();
             if (command.isTaskCreation())
                 response = taskingActions.askTasksToAdd();
             else if(command.isTaskDeletion())
                 response = taskingActions.askTasksToRemove();
-            else if (command.isTaskStatusChanging())
-                response = taskingActions.taskChangingStatus(argument, command);
+            else if (command.isTaskStatusChanging()) {
+                response = taskingActions.taskChangingStatus(argument);
+            }
             else {
-                System.out.println("start");
                 response = taskingActions.taskViewing(chatId, (List<String>) cachedValue, command);
             }
         }
@@ -99,8 +98,9 @@ public class PendingActions {
                 response = taskingActions.taskCreation(chatId, (List<String>) cachedValue, argument, command);
             else if(command.isTaskDeletion())
                 response = taskingActions.taskDeletion(chatId, (List<String>) cachedValue, argument, command);
-            else if(command.isTaskStatusChanging())
-                response = taskingActions.taskChangingStatus(argument, command);
+            else if(command.isTaskStatusChanging()) {
+                response = taskingActions.taskChangingStatus(argument);
+            }
         }
         return response;
     }

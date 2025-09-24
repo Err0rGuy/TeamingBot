@@ -1,11 +1,11 @@
 package org.linker.plnm.repositories;
 
-import jakarta.transaction.Transactional;
-import org.linker.plnm.entities.ChatGroup;
 import org.linker.plnm.entities.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,5 +29,13 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findTeamByChatGroupChatId(Long chatGroupChatId);
 
     Optional<Team> findTeamByNameAndChatGroupChatId(String name, Long chatGroupChatId);
+
+    @Modifying @Transactional
+    @Query(value = "DELETE FROM team_members WHERE member_id = :memberId", nativeQuery = true)
+    void deleteAllByMemberId(@Param("memberId") Long memberId);
+
+    @Modifying @Transactional
+    @Query(value = "DELETE FROM team_tasks WHERE task_id = :taskId", nativeQuery = true)
+    void deleteAllByTaskId(@Param("taskId") Long taskId);
 
 }

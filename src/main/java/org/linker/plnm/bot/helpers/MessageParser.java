@@ -74,7 +74,6 @@ public class MessageParser {
         return extractTasks(text, TASK_STATUS_UPDATE_PATTERN, matcher -> {
             int statusNumber = Integer.parseInt(matcher.group(2).trim());
             Task.TaskStatus status = Task.TaskStatus.values()[statusNumber - 1];
-
             Map<String, String> task = new HashMap<>();
             task.put("name", matcher.group(1).trim());
             task.put("status", status.name());
