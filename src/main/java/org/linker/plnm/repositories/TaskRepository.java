@@ -1,6 +1,6 @@
 package org.linker.plnm.repositories;
 
-import org.linker.plnm.entities.Task;
+import org.linker.plnm.domain.entities.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

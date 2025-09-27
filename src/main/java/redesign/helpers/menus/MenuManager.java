@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.helpers;
+package redesign.helpers.menus;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.enums.BotCommand;
@@ -6,12 +6,13 @@ import org.linker.plnm.enums.BotMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import redesign.helpers.messages.MessageBuilder;
 
 public class MenuManager {
 
 
     @NotNull
-    public static SendMessage botStartMenu(Long chatId, Integer messageId) {
+    public static SendMessage startMenu(Long chatId, Integer messageId) {
         var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
         var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action menu", BotCommand.TASKS_MENU.str());
         var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action menu", BotCommand.TEAMS_MENU.str());
@@ -21,7 +22,7 @@ public class MenuManager {
     }
 
     @NotNull
-    public static SendMessage privateChatbotStartMenu(Long chatId, Integer messageId) {
+    public static SendMessage botPVStartMenu(Long chatId, Integer messageId) {
         var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn);
         return MessageBuilder.buildMessage(

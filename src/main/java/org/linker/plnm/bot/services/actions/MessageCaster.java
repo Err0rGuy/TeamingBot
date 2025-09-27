@@ -1,14 +1,13 @@
 package org.linker.plnm.bot.services.actions;
 
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.linker.plnm.bot.helpers.MessageBuilder;
-import org.linker.plnm.entities.ChatGroup;
-import org.linker.plnm.entities.Member;
-import org.linker.plnm.entities.Team;
+import org.linker.plnm.domain.entities.ChatGroup;
+import org.linker.plnm.domain.entities.Member;
+import org.linker.plnm.domain.entities.Team;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;

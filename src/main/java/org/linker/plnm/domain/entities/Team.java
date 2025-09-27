@@ -1,12 +1,10 @@
-package org.linker.plnm.entities;
+package org.linker.plnm.domain.entities;
 
 
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Builder
@@ -42,7 +40,7 @@ public class Team {
     @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Task> tasks = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "chat_group_id", nullable = false)
     private ChatGroup chatGroup;
 
