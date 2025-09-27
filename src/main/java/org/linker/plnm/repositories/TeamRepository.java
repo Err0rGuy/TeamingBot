@@ -1,6 +1,6 @@
 package org.linker.plnm.repositories;
 
-import org.linker.plnm.entities.Team;
+import org.linker.plnm.domain.entities.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

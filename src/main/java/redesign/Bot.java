@@ -62,7 +62,8 @@ public class Bot extends TelegramLongPollingBot {
             BotApiMethod<?> botApiMethod;
             botApiMethod = detector.dispatchCommand(update);
             try {
-                execute(botApiMethod);
+                if (botApiMethod != null)
+                    execute(botApiMethod);
             } catch (TelegramApiException e) {
                 log.error("Telegram API exception while executing message!", e);
             }

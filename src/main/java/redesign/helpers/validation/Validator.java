@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.helpers;
+package redesign.helpers.validation;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -12,11 +12,11 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component @Slf4j
-public class MessageValidation {
+public class Validator {
 
     private final AbsSender sender;
 
-    public MessageValidation(AbsSender sender) {
+    public Validator(AbsSender sender) {
         this.sender = sender;
     }
 
@@ -41,8 +41,10 @@ public class MessageValidation {
     }
 
     /// Checking if user can access this operation
-    public boolean lackOfAccess(@NotNull BotCommand command, Long chatId, Long userId) {
-        return command.isPrivileged() && !isAdmin(chatId, userId);
+    public boolean isIllegalAction(@NotNull BotCommand command, Message message) {
+        return command.isPrivileged() && !isAdmin(message.getChatId(), message.getFrom().getId()) ||
+                !command.isOfType(BotCommand.CommandType.PV_ALLOWED) && !isGroup(message);
     }
+
 
 }

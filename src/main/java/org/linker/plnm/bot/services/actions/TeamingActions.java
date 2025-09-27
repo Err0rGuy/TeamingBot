@@ -6,9 +6,9 @@ import org.linker.plnm.bot.helpers.MenuManager;
 import org.linker.plnm.bot.helpers.MessageBuilder;
 import org.linker.plnm.bot.helpers.MessageParser;
 import org.linker.plnm.bot.helpers.PendingCache;
-import org.linker.plnm.entities.ChatGroup;
-import org.linker.plnm.entities.Member;
-import org.linker.plnm.entities.Team;
+import org.linker.plnm.domain.entities.ChatGroup;
+import org.linker.plnm.domain.entities.Member;
+import org.linker.plnm.domain.entities.Team;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.repositories.ChatGroupRepository;
@@ -208,13 +208,13 @@ public class TeamingActions {
             return;
         var member = memberOpt.get();
         if (team.getMembers().contains(member)) {
-            responseText.append(BotMessage.USER_ALREADY_ADDED_TO_TEAM.format(username)).append("\n");
+            responseText.append(BotMessage.MEMBER_ALREADY_ADDED_TO_TEAM.format(username)).append("\n");
             return;
         }
         team.getMembers().add(member);
         member.getTeams().add(team);
         teamRepository.save(team);
-        responseText.append(BotMessage.USER_ADDED_TO_TEAM.format(username)).append("\n");
+        responseText.append(BotMessage.MEMBER_ADDED_TO_TEAM.format(username)).append("\n");
     }
 
     /// Removing member from a team
@@ -224,13 +224,13 @@ public class TeamingActions {
             return;
         var member = memberOpt.get();
         if (!team.getMembers().contains(member)) {
-            responseText.append(BotMessage.USER_HAS_NOT_BEEN_ADDED_TO_TEAM.format(username)).append("\n");
+            responseText.append(BotMessage.MEMBER_HAS_NOT_BEEN_ADDED_TO_TEAM.format(username)).append("\n");
             return;
         }
         team.getMembers().remove(member);
         member.getTeams().remove(team);
         teamRepository.save(team);
-        responseText.append(BotMessage.USER_REMOVED_FROM_TEAM.format(username)).append("\n");
+        responseText.append(BotMessage.MEMBER_REMOVED_FROM_TEAM.format(username)).append("\n");
     }
 
     /// Iteration on given usernames for adding or removing from team

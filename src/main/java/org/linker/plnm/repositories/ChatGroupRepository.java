@@ -1,6 +1,6 @@
 package org.linker.plnm.repositories;
 
-import org.linker.plnm.entities.ChatGroup;
+import org.linker.plnm.domain.entities.ChatGroup;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

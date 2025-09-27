@@ -56,9 +56,9 @@ public class CallbackUpdateHandler {
             case REMOVE_TASK_MENU -> response = MenuManager.removeTaskMenu(chatId, messageId);
             case SHOW_TASKS_MENU -> response = MenuManager.showTasksMenu(chatId, messageId);
             case TASKS_MENU -> response = MenuManager.tasksMenu(chatId, messageId);
-            case TASKS_MENU_BACK -> response = MenuManager.tasksMenuBack(chatId, messageId);
+            case TASKS_MENU_BACKWARD -> response = MenuManager.tasksMenuBack(chatId, messageId);
             case TEAMS_MENU -> response = MenuManager.teamsMenu(chatId, messageId);
-            case TEAMS_MENU_BACK ->  response = MenuManager.teamsMenuBack(chatId, messageId);
+            case TEAMS_MENU_BACKWARD ->  response = MenuManager.teamsMenuBack(chatId, messageId);
             case SHOW_TEAMS -> response = teamingActions.showTeams(chatId);
             case MY_TEAMS -> response = teamingActions.myTeams(chatId, userId);
             case CREATE_TEAM -> response = teamingActions.askNewTeamName(chatId, userId, command);
