@@ -12,7 +12,7 @@ public class MenuManager {
 
     @NotNull
     public static SendMessage botStartMenu(Long chatId, Integer messageId) {
-        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
+        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
         var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action menu", BotCommand.TASKS_MENU.str());
         var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action menu", BotCommand.TEAMS_MENU.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn, teamMenuBtn, taskMenuBtn);
@@ -22,7 +22,7 @@ public class MenuManager {
 
     @NotNull
     public static SendMessage privateChatbotStartMenu(Long chatId, Integer messageId) {
-        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
+        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn);
         return MessageBuilder.buildMessage(
                 chatId, messageId, BotMessage.START_RESPONSE.format(), "HTML", markup);

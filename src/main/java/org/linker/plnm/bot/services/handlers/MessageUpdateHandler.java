@@ -45,7 +45,7 @@ public class MessageUpdateHandler {
         }
         switch (command) {
             case START -> response = baseActions.onBotStart(message.getFrom(), chatId, messageId, messageValidation.isGroup(message));
-            case COMMANDS -> response = baseActions.commandsList(chatId);
+            case HINT -> response = baseActions.commandsList(chatId);
             case TASKS_MENU -> response = MenuManager.tasksMenu(chatId, messageId);
             case TEAMS_MENU -> response = MenuManager.teamsMenu(chatId, messageId);
         }
