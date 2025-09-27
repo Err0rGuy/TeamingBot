@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.PRIVATE_CHAT_ALLOWED)),
-    COMMANDS("/commands", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK, CommandType.PRIVATE_CHAT_ALLOWED)),
+    HINT("/hint", List.of(CommandType.UNPRIVILEGED, CommandType.TEXT, CommandType.CALLBACK, CommandType.PRIVATE_CHAT_ALLOWED)),
     SHOW_TEAMS("/show_teams", List.of(CommandType.UNPRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
     MY_TEAMS("/my_teams", List.of(CommandType.UNPRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
     EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED, CommandType.CALLBACK, CommandType.TEAMING_ACTION)),
@@ -114,9 +114,10 @@ public enum BotCommand {
     public boolean isPrivateChatAllowed() {
         return types.contains(CommandType.PRIVATE_CHAT_ALLOWED);
     }
-    public static BotCommand getCommand(String command) {
+
+    public static BotCommand getCommand(String text) {
         return Arrays.stream(values())
-                .filter(c -> command.equals(c.str())).findFirst().orElse(null);
+                .filter(c -> text.equals(c.str())).findFirst().orElse(null);
     }
 
     private static List<BotCommand> filterType(CommandType type) {

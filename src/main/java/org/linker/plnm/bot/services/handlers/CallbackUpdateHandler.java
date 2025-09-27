@@ -49,7 +49,7 @@ public class CallbackUpdateHandler {
             return response;
         }
         switch (command) {
-            case COMMANDS -> response = baseActions.commandsList(chatId);
+            case HINT -> response = baseActions.commandsList(chatId);
             case RENAME_TEAM -> response = teamingActions.askTeamNewName(chatId, userId, argument);
             case REMOVE_MEMBER, ADD_MEMBER -> response = teamingActions.askUserNames(chatId, userId, argument, command);
             case CREATE_TASK_MENU -> response = MenuManager.createTaskMenu(chatId, messageId);
