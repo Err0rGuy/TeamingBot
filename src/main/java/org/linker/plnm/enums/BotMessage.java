@@ -1,13 +1,10 @@
 package org.linker.plnm.enums;
 
-
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.utilities.IOUtilities;
 
 public enum BotMessage {
-    START_RESPONSE(IOUtilities.readFile("static/botStart.html")),
-    HINT_RESPONSE(IOUtilities.readFile("static/botCommands.html")),
+    START_RESPONSE(IOUtilities.readFile("static/bot_start.html")),
+    COMMANDS_LIST(IOUtilities.readFile("static/bot_commands.html")),
     TASKS_MENU_HEADER("⦿ Select an option"),
     TEAMS_MENU_HEADER("⦿ Select an option"),
     TASK_CREATION_MENU_HEADER("\uD83D\uDD8A Create new tasks"),
@@ -29,7 +26,7 @@ public enum BotMessage {
     ASK_FOR_ARG("Okay, Send me the %s"),
     ASK_NEW_TEAM_NAME("Okay, send me the team name\n\n⚠ team name may not contain space in between."),
     ASK_FOR_TEAM_NAME("Okay, Send me the team name"),
-    ASK_FOR_TEAM_NAMES(IOUtilities.readFile("static/tag_teams.txt")),
+    ASK_FOR_TEAM_NAMES(IOUtilities.readFile("static/tag_teams.html")),
     ASK_FOR_USERNAMES(IOUtilities.readFile("static/tag_members.html")),
     ASK_TASKS_TO_ADD(IOUtilities.readFile("static/task_definition_to_add.html")),
     ASK_TASKS_TO_REMOVE(IOUtilities.readFile("static/task_definition_to_remove.html")),
@@ -53,8 +50,7 @@ public enum BotMessage {
     SUPER_GROUP_BROADCAST_MESSAGE("💬 New message at *%s*:\n\n%s\n\n👉 [Jump to message](%s)"),
     NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message at *%s* \uD83D\uDC47"),
     MESSAGE_SENT_TO_TEAM("✅ Message sent to '%s' team members."),
-    MESSAGE_SENT_TO_GLOBAL(
-            "✅ Message was sent to global.\n" + "⚠ Only users who started the bot will receive the message.");
+    MESSAGE_SENT_TO_GLOBAL("✅ Message was sent to global.\n" + "⚠ Only users who started the bot will receive the message.");
 
 
     private final String template;
@@ -63,7 +59,8 @@ public enum BotMessage {
         this.template = template;
     }
 
-    @NotNull @Contract(pure = true)
     public String format(Object... args) {
+        if (args == null || args.length == 0)
+            return template;
         return String.format(template, args);
     }}

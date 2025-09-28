@@ -6,6 +6,7 @@ import org.linker.plnm.domain.mappers.TelegramUserMapper;
 import org.linker.plnm.services.MemberService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -16,7 +17,7 @@ import org.linker.plnm.bot.helpers.validation.Validator;
 import java.util.Optional;
 
 
-@Component
+@Service
 public class StartCommand implements CommandHandler {
 
     private final Validator validation;

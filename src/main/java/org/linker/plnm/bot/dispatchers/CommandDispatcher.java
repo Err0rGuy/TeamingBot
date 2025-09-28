@@ -26,26 +26,19 @@ public class CommandDispatcher {
         this.validator = validator;
     }
 
-    private Message extractMessage(Update update) {
-        Message message;
-        if (update.hasCallbackQuery())
-            message = update.getCallbackQuery().getMessage();
-        else
-            message = update.getMessage();
-        return message;
-    }
-
     public BotApiMethod<?> dispatch(Update update) {
-        Message message = extractMessage(update);
+        Message message = update.getMessage();
         BotApiMethod<?> response = null;
-        BotCommand command = BotCommand.getCommand(message.getText().trim());
+        BotCommand command = BotCommand.getCommand(message.getText());
         if (command != null) {
             if (validator.isIllegalAction(command, update.getMessage()))
                 return null;
             update.setMessage(message);
             for (CommandHandler commandHandler : handlers)
-                if (command == commandHandler.getCommand())
+                if (command == commandHandler.getCommand()) {
                     response = commandHandler.handle(update);
+                    break;
+                }
         }
         else {}
         return response;

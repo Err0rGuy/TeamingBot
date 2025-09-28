@@ -10,18 +10,16 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 
 
 @Component
-public class HintCommand implements CommandHandler {
-
+public class CommandListCommand implements CommandHandler {
 
     @Override
     public BotCommand getCommand() {
-        return BotCommand.HINT;
+        return BotCommand.COMMANDS;
     }
 
     @Override
     public BotApiMethod<?> handle(Update update) {
-        long chatId = update.getMessage().getChatId();
-        return MessageBuilder.buildMessage(chatId, BotMessage.HINT_RESPONSE.format(), "HTML");
+        return MessageBuilder.buildMessage(update.getMessage(), BotMessage.COMMANDS_LIST.format(), "HTML");
     }
 
 }

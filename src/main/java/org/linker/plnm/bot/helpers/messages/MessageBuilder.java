@@ -40,15 +40,6 @@ public class MessageBuilder {
     }
 
     @NotNull
-    public static SendMessage buildMessage(long chatId, String text, String parseMode){
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
-        sendMessage.setParseMode(parseMode);
-        return sendMessage;
-    }
-
-    @NotNull
     public static ForwardMessage buildForwardMessage(Message message){
         ForwardMessage forwardMessage = new ForwardMessage();
         forwardMessage.setChatId(message.getChatId());

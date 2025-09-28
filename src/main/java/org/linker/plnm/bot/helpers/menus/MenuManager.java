@@ -11,10 +11,9 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 
 public class MenuManager {
 
-
     @NotNull
     public static SendMessage startMenu(Message message) {
-        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
+        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
         var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action menu", BotCommand.TASKS_MENU.str());
         var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action menu", BotCommand.TEAMS_MENU.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn, teamMenuBtn, taskMenuBtn);
@@ -24,7 +23,7 @@ public class MenuManager {
 
     @NotNull
     public static SendMessage botPVStartMenu(Message message) {
-        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.HINT.str());
+        var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn);
         return MessageBuilder.buildMessage(
                 message, BotMessage.START_RESPONSE.format(), "HTML", markup);

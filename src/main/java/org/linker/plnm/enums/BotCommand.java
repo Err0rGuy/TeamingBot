@@ -2,11 +2,10 @@ package org.linker.plnm.enums;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.PV_ALLOWED)),
-    HINT("/hint", List.of(CommandType.UNPRIVILEGED, CommandType.PV_ALLOWED)),
+    COMMANDS("/commands", List.of(CommandType.UNPRIVILEGED, CommandType.PV_ALLOWED)),
     CREATE_TEAM("/create_team", List.of(CommandType.PRIVILEGED)),
     REMOVE_TEAM("/remove_team", List.of(CommandType.PRIVILEGED)),
     RENAME_TEAM("/rename_team", List.of(CommandType.PRIVILEGED)),
