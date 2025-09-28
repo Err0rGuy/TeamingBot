@@ -3,25 +3,11 @@ package org.linker.plnm.domain.mappers;
 import org.linker.plnm.domain.dtos.TaskDto;
 import org.linker.plnm.domain.entities.Task;
 import org.springframework.stereotype.Component;
-
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class TaskMapper implements Mapper<Task, TaskDto> {
-
-    private final TeamMapper teamMapper;
-
-    private final MemberMapper memberMapper;
-
-    public TaskMapper(
-            TeamMapper teamMapper,
-            MemberMapper memberMapper
-    ) {
-        this.teamMapper = teamMapper;
-        this.memberMapper = memberMapper;
-    }
 
     @Override
     public Task toEntity(TaskDto taskDto) {
@@ -29,7 +15,6 @@ public class TaskMapper implements Mapper<Task, TaskDto> {
                 .id(taskDto.id())
                 .name(taskDto.name())
                 .description(taskDto.description())
-                .teams(new HashSet<>(teamMapper.toEntityList(taskDto.teams())))
                 .status(taskDto.status())
                 .build();
     }
@@ -40,8 +25,6 @@ public class TaskMapper implements Mapper<Task, TaskDto> {
                 .id(task.getId())
                 .name(task.getName())
                 .description(task.getDescription())
-                .teams(teamMapper.toDtoList(task.getTeams().stream().toList()))
-                .members(memberMapper.toDtoList(task.getMembers().stream().toList()))
                 .status(task.getStatus())
                 .build();
     }

@@ -3,12 +3,14 @@ package org.linker.plnm.domain.mappers;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.entities.Member;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Component
 public class TelegramUserMapper implements Mapper<User, MemberDto> {
 
     public static Optional<Member> mapToMember(@NotNull User user) {

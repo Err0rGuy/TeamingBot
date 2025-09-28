@@ -7,7 +7,11 @@ import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.*;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+@Service
 public class TeamService {
 
     private final TeamRepository teamRepository;
@@ -38,6 +42,18 @@ public class TeamService {
         if (teamOpt.isEmpty())
             throw new TeamNotFoundException(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         teamRepository.delete(teamOpt.get());
+    }
+
+    public List<TeamDto> getMemberTeams(MemberDto memberDto) throws TeamNotFoundException, MemberNotFoundException {
+        var member = memberRepository.findById(memberDto.telegramId())
+                .orElseThrow(() -> new MemberNotFoundException(BotMessage.YOU_DID_NOT_STARTED.format()));
+        return teamMapper.toDtoList(member.getTeams().stream().toList());
+    }
+
+    public List<TeamDto> getAllGroupTeams(Long chatId) throws TeamNotFoundException {
+        var teams = teamRepository.findAllByChatGroup_ChatId(chatId)
+                .orElseThrow(() -> new TeamNotFoundException(BotMessage.NO_TEAM_FOUND.format()));
+        return teamMapper.toDtoList(teams);
     }
 
     public boolean existsTeam(String teamName, Long chatId) throws TeamNotFoundException {

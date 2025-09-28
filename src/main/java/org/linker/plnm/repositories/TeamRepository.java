@@ -38,4 +38,5 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Query(value = "DELETE FROM team_tasks WHERE task_id = :taskId", nativeQuery = true)
     void deleteAllByTaskId(@Param("taskId") Long taskId);
 
+    Optional<List<Team>> findAllByChatGroup_ChatId(Long chatGroupChatId);
 }
