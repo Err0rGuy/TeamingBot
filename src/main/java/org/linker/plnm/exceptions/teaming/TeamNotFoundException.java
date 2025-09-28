@@ -1,4 +1,4 @@
-package org.linker.plnm.exceptions;
+package org.linker.plnm.exceptions.teaming;
 
 public class TeamNotFoundException extends RuntimeException{
 

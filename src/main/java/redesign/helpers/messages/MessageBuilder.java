@@ -4,36 +4,37 @@ import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 public class MessageBuilder {
     
     @NotNull
-    public static SendMessage buildMessage(long chatId, String text, int replyToMessageId){
+    public static SendMessage buildMessage(Message message, String text){
         SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
+        sendMessage.setChatId(message.getChatId());
         sendMessage.setText(text);
-        sendMessage.setReplyToMessageId(replyToMessageId);
+        sendMessage.setReplyToMessageId(message.getMessageId());
         return sendMessage;
     }
 
     @NotNull
-    public static SendMessage buildMessage(long chatId, int replyToMessageId, String text, InlineKeyboardMarkup markup){
-        SendMessage sendMessage = buildMessage(chatId, text, replyToMessageId);
+    public static SendMessage buildMessage(Message message, String text, InlineKeyboardMarkup markup){
+        SendMessage sendMessage = buildMessage(message, text);
         sendMessage.setReplyMarkup(markup);
         return sendMessage;
     }
 
     @NotNull
-    public static SendMessage buildMessage(long chatId, int replyToMessageId, String text, String parseMode){
-        SendMessage sendMessage = buildMessage(chatId, text, replyToMessageId);
+    public static SendMessage buildMessage(Message message, String text, String parseMode){
+        SendMessage sendMessage = buildMessage(message, text);
         sendMessage.setParseMode(parseMode);
         return sendMessage;
     }
 
     @NotNull
-    public static SendMessage buildMessage(long chatId, int replyToMessageId, String text, String parseMode, InlineKeyboardMarkup markup){
-         SendMessage sendMessage = buildMessage(chatId, replyToMessageId, text, parseMode);
+    public static SendMessage buildMessage(Message message, String text, String parseMode, InlineKeyboardMarkup markup){
+         SendMessage sendMessage = buildMessage(message, text, parseMode);
          sendMessage.setReplyMarkup(markup);
          return sendMessage;
     }
@@ -48,11 +49,11 @@ public class MessageBuilder {
     }
 
     @NotNull
-    public static ForwardMessage buildForwardMessage(long chatId, long fromChatId, int messageId){
+    public static ForwardMessage buildForwardMessage(Message message){
         ForwardMessage forwardMessage = new ForwardMessage();
-        forwardMessage.setChatId(chatId);
-        forwardMessage.setFromChatId(fromChatId);
-        forwardMessage.setMessageId(messageId);
+        forwardMessage.setChatId(message.getChatId());
+        forwardMessage.setFromChatId(message.getFrom().getId());
+        forwardMessage.setMessageId(message.getMessageId());
         return forwardMessage;
     }
 

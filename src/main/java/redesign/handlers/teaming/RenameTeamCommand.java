@@ -2,24 +2,35 @@ package redesign.handlers.teaming;
 
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.exceptions.DuplicateTeamException;
+import org.linker.plnm.exceptions.teaming.DuplicateTeamException;
+import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import redesign.handlers.CommandHandler;
+import redesign.helpers.cache.SessionCache;
 import redesign.helpers.dtos.DtoBuilder;
 import redesign.helpers.messages.MessageBuilder;
+import redesign.sessions.TeamActionSession;
+import java.util.List;
 
 
-@Component
+@Service
 public class RenameTeamCommand implements CommandHandler {
 
     private final TeamService teamService;
 
-    public RenameTeamCommand(TeamService teamService) {
+    private final SessionCache sessionCache;
+
+    public RenameTeamCommand(
+            TeamService teamService,
+            SessionCache sessionCache
+    ) {
         this.teamService = teamService;
+        this.sessionCache = sessionCache;
     }
 
     @Override
@@ -30,13 +41,34 @@ public class RenameTeamCommand implements CommandHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        var teamDto = DtoBuilder.buildTeamDto(message);
-        long chatId = teamDto.chatGroup().chatId();
-        try {
-            teamService.updateTeam(teamDto);
-        } catch (DuplicateTeamException e) {
-            return MessageBuilder.buildMessage(chatId, BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name()), message.getMessageId());
+        if (update.hasCallbackQuery()){
+            String teamName = message.getText().split(" ", 2)[1].trim();
+            if (!teamService.existsTeam(teamName, message.getChatId()))
+                return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+            return askForNewTeamName(message, teamName);
         }
-        return MessageBuilder.buildMessage(chatId, BotMessage.TEAM_RENAMED.format(teamDto.name()), message.getMessageId());
+        String teamName = sessionCache.fetch(message).getTargets().getFirst();
+        sessionCache.remove(message);
+        return renameTeam(message, teamName);
     }
+
+    private BotApiMethod<?> renameTeam(Message message, String teamName) {
+        var teamDto = DtoBuilder.buildTeamDto(message);
+        try {
+            teamService.renameTeam(teamName, teamDto);
+        } catch (DuplicateTeamException | TeamNotFoundException e) {
+            return MessageBuilder.buildMessage(message, e.getMessage());
+        }
+        return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, teamDto.name()));
+    }
+
+    private SendMessage askForNewTeamName(Message message, String teamName) {
+        var session = TeamActionSession.builder()
+                .command(BotCommand.RENAME_TEAM)
+                .teamNames(List.of(teamName))
+                .build();
+        sessionCache.add(message, session);
+        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAME.format());
+    }
+
 }

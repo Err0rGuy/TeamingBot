@@ -3,6 +3,7 @@ package redesign;
 import org.linker.plnm.enums.BotCommand;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import redesign.handlers.CommandHandler;
 import redesign.helpers.validation.Validator;
@@ -10,13 +11,13 @@ import redesign.helpers.validation.Validator;
 import java.util.List;
 
 @Service
-public class CommandDetector {
+public class CommandDispatcher {
 
     private final List<CommandHandler> handlers;
 
     private final Validator validator;
 
-    public CommandDetector(
+    public CommandDispatcher(
             List<CommandHandler> handlers,
             Validator validator
     ) {
@@ -24,22 +25,23 @@ public class CommandDetector {
         this.validator = validator;
     }
 
-    private String extractText(Update update) {
-        String text;
+    private Message extractMessage(Update update) {
+        Message message;
         if (update.hasCallbackQuery())
-            text = update.getCallbackQuery().getData();
+            message = update.getCallbackQuery().getMessage();
         else
-            text = update.getMessage().getText();
-        return text.trim();
+            message = update.getMessage();
+        return message;
     }
 
-    public BotApiMethod<?> dispatchCommand(Update update) {
-        String text = extractText(update);
+    public BotApiMethod<?> dispatch(Update update) {
+        Message message = extractMessage(update);
         BotApiMethod<?> response = null;
-        BotCommand command = BotCommand.getCommand(text);
+        BotCommand command = BotCommand.getCommand(message.getText().trim());
         if (command != null) {
             if (validator.isIllegalAction(command, update.getMessage()))
                 return null;
+            update.setMessage(message);
             for (CommandHandler commandHandler : handlers)
                 if (command == commandHandler.getCommand())
                     response = commandHandler.handle(update);

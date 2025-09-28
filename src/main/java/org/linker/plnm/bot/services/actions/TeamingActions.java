@@ -197,7 +197,7 @@ public class TeamingActions {
     @NotNull private Optional<Member> checkUserStartedTheBot(StringBuilder responseText, String username) {
         var memberOpt = memberRepository.findByUsername(username);
         if (memberOpt.isEmpty())
-            responseText.append(BotMessage.USER_HAS_NOT_STARTED.format(username)).append("\n");
+            responseText.append(BotMessage.MEMBER_HAS_NOT_STARTED.format(username)).append("\n");
         return memberOpt;
     }
 

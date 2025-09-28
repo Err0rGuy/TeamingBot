@@ -20,13 +20,13 @@ public class Bot extends TelegramLongPollingBot {
 
     private final BotSettings botSettings;
 
-    private final CommandDetector detector;
+    private final CommandDispatcher detector;
 
     private ExecutorService executorService;
 
     public Bot(
             BotSettings botSettings,
-            CommandDetector detector
+            CommandDispatcher detector
     ){
         super(botSettings.getToken());
         this.botSettings = botSettings;
@@ -35,7 +35,7 @@ public class Bot extends TelegramLongPollingBot {
 
     public Bot(
             BotSettings botSettings,
-            CommandDetector detector,
+            CommandDispatcher detector,
             DefaultBotOptions defaultBotOptions
     ) {
         super(defaultBotOptions, botSettings.getToken());
@@ -60,7 +60,7 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         executorService.submit(() -> {
             BotApiMethod<?> botApiMethod;
-            botApiMethod = detector.dispatchCommand(update);
+            botApiMethod = detector.dispatch(update);
             try {
                 if (botApiMethod != null)
                     execute(botApiMethod);

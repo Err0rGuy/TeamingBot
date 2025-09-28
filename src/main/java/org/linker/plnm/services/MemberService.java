@@ -22,14 +22,11 @@ public class MemberService {
         this.memberMapper = memberMapper;
     }
 
-    public MemberDto createMember(MemberDto memberDto) {
-        return memberRepository.findById(memberDto.telegramId())
-                .map(memberMapper::toDto)
-                .orElseGet(() -> {
-                    var member = memberRepository.save(memberMapper.toEntity(memberDto));
-                    return memberMapper.toDto(member);
-                });
+    public MemberDto saveOrUpdateMember(MemberDto memberDto) {
+        var member = memberRepository.save(memberMapper.toEntity(memberDto));
+        return memberMapper.toDto(member);
     }
+
 
 
 

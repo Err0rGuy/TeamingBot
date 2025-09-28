@@ -47,7 +47,7 @@ public class StartCommand implements CommandHandler {
         Optional<Member> memberOpt = TelegramUserMapper.mapToMember(user);
         if (memberOpt.isEmpty())
             return null;
-        memberService.createMember(telegramUserMapper.toDto(user));
+        memberService.saveOrUpdateMember(telegramUserMapper.toDto(user));
         return (validation.isGroup(message)) ?
                 MenuManager.startMenu(chatId, message.getMessageId()) :
                 MenuManager.botPVStartMenu(chatId, message.getMessageId());

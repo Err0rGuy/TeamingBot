@@ -118,7 +118,7 @@ public class TaskingActions {
             }
             for (String username : usernames) {
                 if (!memberRepository.existsByUsername(username))
-                    responseTxt.append(BotMessage.USER_HAS_NOT_STARTED.format(username)).append("\n");
+                    responseTxt.append(BotMessage.MEMBER_HAS_NOT_STARTED.format(username)).append("\n");
                 else
                     assigneeList.add(username);
             }

@@ -3,25 +3,25 @@ package org.linker.plnm.utilities;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.stereotype.Component;
-import java.util.Map;
+
 import java.util.concurrent.TimeUnit;
 
 
 @Component
 public class CacheUtilities <V> {
 
-    private final Cache<String, Map<String, V>> cache;
+    private final Cache<String, V> cache;
 
-    private final int expirationTimeInMinutes = 5;
+    private static final int EXPIRATION_TIME_IN_MINUTES = 5;
 
     public CacheUtilities() {
         cache = Caffeine.newBuilder()
-        .expireAfterWrite(expirationTimeInMinutes, TimeUnit.MINUTES)
+        .expireAfterWrite(EXPIRATION_TIME_IN_MINUTES, TimeUnit.MINUTES)
         .maximumSize(1000)
         .build();
     }
 
-    public Map<String, V> get(String key) {
+    public V get(String key) {
         return cache.getIfPresent(key);
     }
 
@@ -29,7 +29,7 @@ public class CacheUtilities <V> {
         return cache.asMap().containsKey(key);
     }
 
-    public void put(String key, Map<String, V> value) {
+    public void put(String key, V value) {
         cache.put(key, value);
     }
 

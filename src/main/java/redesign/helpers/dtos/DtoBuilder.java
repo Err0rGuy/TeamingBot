@@ -23,6 +23,15 @@ public class DtoBuilder {
                 .build();
     }
 
+    public static List<TeamDto> buildTeamDtoList(Message message) {
+        var teamNames = MessageParser.findTeamNames(message.getText());
+        var teamDtos = new ArrayList<TeamDto>();
+        for (var teamName : teamNames) {
+            teamDtos.add(buildTeamDto(message));
+        }
+        return teamDtos;
+    }
+
     public static List<MemberDto> buildMemberDtoList(Message message) {
         List<MemberDto>  members = new ArrayList<>();
         String[] userNames = MessageParser.findUsernames(message.getText());
