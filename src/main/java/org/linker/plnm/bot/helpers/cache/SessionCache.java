@@ -17,7 +17,7 @@ public class SessionCache {
     }
 
     /// Cached operation keys are the combination of chatId and userId separated with '|'
-    private String getCacheKey(@NotNull Long chatId, @NotNull Long userId) {
+    public String getCacheKey(@NotNull Long chatId, @NotNull Long userId) {
         return chatId + "|" + userId;
     }
 

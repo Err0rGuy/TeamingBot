@@ -17,7 +17,7 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
-import org.linker.plnm.bot.sessions.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import java.util.List;
 
 @Service
@@ -45,8 +45,6 @@ public class RemoveMemberCommand implements CommandHandler {
         Message message = update.getMessage();
         if (update.hasCallbackQuery()){
             String teamName = message.getText().split(" ", 2)[1].trim();
-            if (!teamService.existsTeam(teamName, message.getChatId()))
-                return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
             return askForUsernames(message, teamName);
         }
         sessionCache.remove(message);
@@ -60,15 +58,21 @@ public class RemoveMemberCommand implements CommandHandler {
         for (MemberDto memberDto : members) {
             try {
                 teamService.removeMemberFromTeam(teamDto, memberDto);
-                responseText.append(BotMessage.MEMBER_REMOVED_FROM_TEAM.format(memberDto.username())).append("\n\n");
-            } catch (TeamNotFoundException | MemberNotFoundException | DuplicateTeamMemberException e) {
-                responseText.append(e.getMessage()).append("\n\n");
+                responseText.append(BotMessage.MEMBER_REMOVED_FROM_TEAM.format(memberDto.displayName())).append("\n\n");
+            } catch (TeamNotFoundException e) {
+                responseText.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name())).append("\n\n");
+            } catch (MemberNotFoundException e) {
+                responseText.append(BotMessage.MEMBER_HAS_NOT_BEEN_ADDED_TO_TEAM.format(memberDto.displayName())).append("\n\n");
+            } catch (DuplicateTeamMemberException e) {
+                responseText.append(BotMessage.MEMBER_ALREADY_ADDED_TO_TEAM.format(memberDto.displayName())).append("\n\n");
             }
         }
         return MessageBuilder.buildMessage(message, responseText.toString());
     }
 
     private SendMessage askForUsernames(Message message, String teamName) {
+        if (!teamService.existsTeam(teamName, message.getChatId()))
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         var session = TeamActionSession.builder()
                 .command(BotCommand.REMOVE_MEMBER)
                 .teamNames(List.of(teamName))

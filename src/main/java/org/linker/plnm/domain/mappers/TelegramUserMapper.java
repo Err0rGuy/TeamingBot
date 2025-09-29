@@ -5,7 +5,6 @@ import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.entities.Member;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.User;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

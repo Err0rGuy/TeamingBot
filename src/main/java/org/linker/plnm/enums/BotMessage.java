@@ -19,6 +19,7 @@ public enum BotMessage {
     INCORRECT_TASK_DEFINITION("❌ Incorrect definition!"),
     INCORRECT_TASK_DEFINED("❌ Incorrect definition for task '%s'!"),
     NO_USERNAME_GIVEN("❌ No username given!"),
+    NO_TEAM_NAME_GIVEN("❌ No team name given!"),
     TEAM_CREATED("✅ Team '%s' created successfully"),
     TEAM_REMOVED("✅ Team '%s' removed successfully"),
     TEAM_RENAMED("✅ Team '%s' renamed to '%s' "),

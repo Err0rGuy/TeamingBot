@@ -4,6 +4,7 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
+import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -41,12 +42,11 @@ public class ShowTeamsCommand implements CommandHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        var memberDto = telegramUserMapper.toDto(message.getFrom());
         List<TeamDto> teams;
         try {
             teams = teamService.getAllGroupTeams(message.getChatId());
         } catch (TeamNotFoundException e) {
-            return MessageBuilder.buildMessage(message, e.getMessage());
+            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
         }
         Context context = new  Context();
         context.setVariable("teams", teams);

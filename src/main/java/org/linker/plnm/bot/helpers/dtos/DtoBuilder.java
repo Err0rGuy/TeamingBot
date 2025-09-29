@@ -5,31 +5,39 @@ import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class DtoBuilder {
 
-    public static TeamDto buildTeamDto(Message message) {
-        var chatGroup = ChatGroupDto.builder()
+    private static ChatGroupDto buildChatGroupDto(Message message) {
+         return ChatGroupDto.builder()
                 .chatId(message.getChatId())
                 .name(message.getChat().getTitle())
                 .build();
+    }
 
+    public static TeamDto buildTeamDto(Message message) {
         return TeamDto.builder()
                 .name(message.getText().trim())
-                .chatGroup(chatGroup)
+                .chatGroup(buildChatGroupDto(message))
+                .build();
+    }
+
+    private static TeamDto buildTeamDto(Message message, String teamName) {
+        return TeamDto.builder()
+                .name(teamName)
+                .chatGroup(buildChatGroupDto(message))
                 .build();
     }
 
     public static List<TeamDto> buildTeamDtoList(Message message) {
         var teamNames = MessageParser.findTeamNames(message.getText());
-        var teamDtos = new ArrayList<TeamDto>();
+        var teamDtoList = new ArrayList<TeamDto>();
         for (var teamName : teamNames) {
-            teamDtos.add(buildTeamDto(message));
+            teamDtoList.add(buildTeamDto(message, teamName));
         }
-        return teamDtos;
+        return teamDtoList;
     }
 
     public static List<MemberDto> buildMemberDtoList(Message message) {

@@ -2,6 +2,10 @@ package org.linker.plnm.exceptions.teaming;
 
 public class DuplicateTeamMemberException extends RuntimeException {
 
+    public DuplicateTeamMemberException() {
+        super("Member already added to this team!");
+    }
+
     public DuplicateTeamMemberException(String message) {
         super(message);
     }

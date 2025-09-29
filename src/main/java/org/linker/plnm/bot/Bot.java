@@ -15,6 +15,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
@@ -59,11 +60,9 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        executorService.submit(() -> {
+        Future<?> future = executorService.submit(() -> {
             BotApiMethod<?> botApiMethod;
             update.setMessage(extractMessage(update));
-            String text = update.getMessage().getText();
-            update.getMessage().setText(text.replace("@" + getBotUsername(), ""));
             botApiMethod = detector.dispatch(update);
             try {
                 if (botApiMethod != null) {
@@ -73,6 +72,11 @@ public class Bot extends TelegramLongPollingBot {
                 log.error("Telegram API exception while executing message!", e);
             }
         });
+        try {
+            future.get();
+        }catch (Exception e){
+            log.error("Facing an exception in work flow!", e);
+        }
     }
 
     @Override
@@ -84,10 +88,12 @@ public class Bot extends TelegramLongPollingBot {
         Message message;
         if (update.hasCallbackQuery()) {
             message = update.getCallbackQuery().getMessage();
+            message.setFrom(update.getCallbackQuery().getFrom());
             message.setText(update.getCallbackQuery().getData());
         }
         else
             message = update.getMessage();
+        message.setText(message.getText().replace("@" + getBotUsername(), ""));
         return message;
     }
 

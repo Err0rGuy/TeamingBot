@@ -1,7 +1,13 @@
 package org.linker.plnm.exceptions.teaming;
 
+import org.linker.plnm.domain.entities.Team;
+
 public class DuplicateTeamException extends RuntimeException {
 
+
+    public DuplicateTeamException() {
+        super("Team with this name already exists for this group chat!");
+    }
 
     public DuplicateTeamException(String message) {
         super(message);

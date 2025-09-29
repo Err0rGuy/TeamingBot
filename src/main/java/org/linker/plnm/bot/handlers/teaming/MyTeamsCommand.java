@@ -3,6 +3,7 @@ package org.linker.plnm.bot.handlers.teaming;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
+import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -46,7 +47,7 @@ public class MyTeamsCommand implements CommandHandler {
         try {
             teams = teamService.getMemberTeams(memberDto);
         } catch (TeamNotFoundException e) {
-            return MessageBuilder.buildMessage(message, e.getMessage());
+            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
         }
         Context context = new  Context();
         context.setVariable("teams", teams);

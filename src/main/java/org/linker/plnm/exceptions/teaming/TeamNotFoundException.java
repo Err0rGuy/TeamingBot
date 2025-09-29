@@ -2,6 +2,10 @@ package org.linker.plnm.exceptions.teaming;
 
 public class TeamNotFoundException extends RuntimeException{
 
+    public TeamNotFoundException() {
+        super("Team not for in this group found!");
+    }
+
     public TeamNotFoundException(String message) {
         super(message);
     }

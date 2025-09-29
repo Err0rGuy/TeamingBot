@@ -2,8 +2,6 @@ package org.linker.plnm.bot.handlers.teaming;
 import lombok.extern.slf4j.Slf4j;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.exceptions.teaming.MemberNotFoundException;
-import org.linker.plnm.exceptions.teaming.TeamMemberNotFoundException;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
@@ -15,7 +13,7 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
-import org.linker.plnm.bot.sessions.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 
 @Slf4j
@@ -52,8 +50,8 @@ public class RemoveTeamCommand implements CommandHandler {
         for (String teamName :  teamNames) {
             try {
                 teamService.removeTeam(teamName, chatId);
-            } catch (TeamNotFoundException | MemberNotFoundException | TeamMemberNotFoundException e) {
-                responseTxt.append(e.getMessage()).append("\n\n");
+            } catch (TeamNotFoundException e) {
+                responseTxt.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)).append("\n\n");
             }
             responseTxt.append(BotMessage.TEAM_REMOVED.format(teamName)).append("\n\n");
         }

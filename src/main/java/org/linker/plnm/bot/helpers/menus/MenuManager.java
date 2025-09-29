@@ -14,8 +14,8 @@ public class MenuManager {
     @NotNull
     public static SendMessage startMenu(Message message) {
         var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
-        var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action menu", BotCommand.TASKS_MENU.str());
-        var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action menu", BotCommand.TEAMS_MENU.str());
+        var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action Menu", BotCommand.TASKS_MENU.str());
+        var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action Menu", BotCommand.TEAMS_MENU.str());
         var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn, teamMenuBtn, taskMenuBtn);
         return MessageBuilder.buildMessage(
                 message, BotMessage.START_RESPONSE.format(), "HTML", markup);
@@ -29,14 +29,12 @@ public class MenuManager {
                 message, BotMessage.START_RESPONSE.format(), "HTML", markup);
     }
 
-    /// Tasks action menu
     @NotNull
     public static SendMessage tasksMenu(Message message) {
         return MessageBuilder.buildMessage(
                 message, BotMessage.TASKS_MENU_HEADER.format(), taskingActionsMarkup());
     }
 
-    /// Tasks action menu in new message
     @NotNull
     public static EditMessageText tasksMenuBack(Message message) {
         return MessageBuilder.buildEditMessageText(

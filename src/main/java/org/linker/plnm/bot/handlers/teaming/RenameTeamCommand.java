@@ -14,7 +14,7 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
-import org.linker.plnm.bot.sessions.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import java.util.List;
 
 
@@ -56,8 +56,10 @@ public class RenameTeamCommand implements CommandHandler {
         var teamDto = DtoBuilder.buildTeamDto(message);
         try {
             teamService.renameTeam(teamName, teamDto);
-        } catch (DuplicateTeamException | TeamNotFoundException e) {
-            return MessageBuilder.buildMessage(message, e.getMessage());
+        } catch (DuplicateTeamException e) {
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(teamName));
+        } catch (TeamNotFoundException e) {
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         }
         return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, teamDto.name()));
     }

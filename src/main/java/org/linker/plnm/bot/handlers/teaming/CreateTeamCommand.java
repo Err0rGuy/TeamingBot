@@ -13,7 +13,7 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
-import org.linker.plnm.bot.sessions.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 @Service
 public class CreateTeamCommand implements CommandHandler {
@@ -35,7 +35,7 @@ public class CreateTeamCommand implements CommandHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        if (!sessionCache.exists(message))
+        if (update.hasCallbackQuery())
             return askForTeamNames(message);
         sessionCache.remove(message);
         return createTeam(message);
@@ -44,11 +44,13 @@ public class CreateTeamCommand implements CommandHandler {
     private BotApiMethod<?> createTeam(Message message) {
         StringBuilder responseTxt = new StringBuilder();
         var teamDtoList = DtoBuilder.buildTeamDtoList(message);
+        if (teamDtoList.isEmpty())
+            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
         for (TeamDto teamDto : teamDtoList) {
             try {
-                teamService.saveOrUpdateTeam(teamDto);
+                teamService.saveTeam(teamDto);
             } catch (DuplicateTeamException e) {
-                responseTxt.append(e.getMessage()).append("\n\n");
+                responseTxt.append(BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name())).append("\n\n");
             }
             responseTxt.append(BotMessage.TEAM_CREATED.format(teamDto)).append("\n\n");
         }
@@ -58,7 +60,7 @@ public class CreateTeamCommand implements CommandHandler {
     private SendMessage askForTeamNames(Message message) {
         var session = TeamActionSession.builder().command(BotCommand.CREATE_TEAM).build();
         sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format());
+        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), "HTML");
     }
 
 

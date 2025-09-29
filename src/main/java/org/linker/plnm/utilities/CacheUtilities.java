@@ -12,7 +12,7 @@ public class CacheUtilities <V> {
 
     private final Cache<String, V> cache;
 
-    private static final int EXPIRATION_TIME_IN_MINUTES = 5;
+    private static final int EXPIRATION_TIME_IN_MINUTES = 2;
 
     public CacheUtilities() {
         cache = Caffeine.newBuilder()

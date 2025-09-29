@@ -2,6 +2,7 @@ package org.linker.plnm.enums;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public enum BotCommand {
     START("/start", List.of(CommandType.UNPRIVILEGED, CommandType.PV_ALLOWED)),
@@ -52,6 +53,10 @@ public enum BotCommand {
         return types.contains(CommandType.PRIVILEGED);
     }
 
+    public boolean isPvAllowed() {
+        return types.contains(CommandType.PV_ALLOWED);
+    }
+
     public boolean isOfType(CommandType type){
         return types.contains(type);
     }
@@ -72,6 +77,8 @@ public enum BotCommand {
 
     public static BotCommand getCommand(String text) {
         return Arrays.stream(values())
-                .filter(c -> text.equals(c.str())).findFirst().orElse(null);
+                .filter(c -> Objects.equals(text, c.str()))
+                .findFirst()
+                .orElse(null);
     }
 }

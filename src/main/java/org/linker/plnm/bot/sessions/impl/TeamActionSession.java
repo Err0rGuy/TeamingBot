@@ -1,7 +1,8 @@
-package org.linker.plnm.bot.sessions;
+package org.linker.plnm.bot.sessions.impl;
 
 import lombok.Builder;
 import lombok.Data;
+import org.linker.plnm.bot.sessions.OperationSession;
 import org.linker.plnm.enums.BotCommand;
 import java.util.ArrayList;
 import java.util.List;

@@ -2,6 +2,9 @@ package org.linker.plnm.exceptions.teaming;
 
 public class MemberNotFoundException extends RuntimeException {
 
+    public MemberNotFoundException() {
+        super("Member not found!");
+    }
     public MemberNotFoundException(String message) {
         super(message);
     }

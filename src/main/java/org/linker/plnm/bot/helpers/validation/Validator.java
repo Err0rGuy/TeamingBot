@@ -20,31 +20,30 @@ public class Validator {
         this.sender = sender;
     }
 
-    /// Checking if user is admin
-    public boolean isAdmin(@NotNull Long chatId, Long userId) {
+    public boolean isGroup(@NotNull Message message) {
+        return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
+    }
+
+    public boolean illegalCommand(BotCommand command, Message message) {
+        return command.isPrivileged() && !isAdmin(message);
+    }
+
+    public boolean badCommand(BotCommand command, Message message) {
+        return  !command.isPvAllowed() && !isGroup(message);
+    }
+
+    /// Check that message sender is admin or not
+    public boolean isAdmin(@NotNull Message message) {
         GetChatMember getChatMember = new GetChatMember();
-        getChatMember.setChatId(chatId.toString());
-        getChatMember.setUserId(userId);
+        getChatMember.setChatId(message.getChatId());
+        getChatMember.setUserId(message.getFrom().getId());
         try {
             ChatMember chatMember = sender.execute(getChatMember);
             String status = chatMember.getStatus();
             return TelegramUserRole.ADMIN.isEqualTo(status) || TelegramUserRole.CREATOR.isEqualTo(status);
         } catch (TelegramApiException e) {
-            log.info("Failed to execute Multi/Broad cast message for chatId={}", chatId, e);
+            log.info("Failed to execute Multi/Broad cast message for chatId={}", message.getChatId(), e);
             return false;
         }
     }
-
-    /// Check if message comes from a group chat
-    public boolean isGroup(@NotNull Message message) {
-        return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
-    }
-
-    /// Checking if user can access this operation
-    public boolean isIllegalAction(@NotNull BotCommand command, Message message) {
-        return command.isPrivileged() && !isAdmin(message.getChatId(), message.getFrom().getId()) ||
-                !command.isOfType(BotCommand.CommandType.PV_ALLOWED) && !isGroup(message);
-    }
-
-
 }

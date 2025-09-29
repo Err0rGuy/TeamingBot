@@ -3,6 +3,7 @@ package org.linker.plnm.services;
 
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.mappers.MemberMapper;
+import org.linker.plnm.exceptions.teaming.MemberDuplicateException;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +23,18 @@ public class MemberService {
         this.memberMapper = memberMapper;
     }
 
-    public MemberDto saveOrUpdateMember(MemberDto memberDto) {
+    public MemberDto saveMember(MemberDto memberDto) {
+        if (memberRepository.existsByUsername(memberDto.username()))
+            throw new MemberDuplicateException();
         var member = memberRepository.save(memberMapper.toEntity(memberDto));
         return memberMapper.toDto(member);
     }
 
+    public boolean memberExists(String username) {
+        return memberRepository.existsByUsername(username);
+    }
 
-
-
+    public boolean memberExists(Long id) {
+        return memberRepository.existsById(id);
+    }
 }

@@ -17,7 +17,7 @@ import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
-import org.linker.plnm.bot.sessions.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import java.util.List;
 
 

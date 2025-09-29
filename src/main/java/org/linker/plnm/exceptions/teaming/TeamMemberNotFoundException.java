@@ -2,6 +2,10 @@ package org.linker.plnm.exceptions.teaming;
 
 public class TeamMemberNotFoundException extends RuntimeException {
 
+    public TeamMemberNotFoundException() {
+        super("Member is not added to this team yet!");
+    }
+
     public TeamMemberNotFoundException(String message) {
         super(message);
     }
