@@ -51,11 +51,22 @@ public class RemoveMemberCommand implements CommandHandler {
         return removeMembers(message);
     }
 
+    private SendMessage askForUsernames(Message message, String teamName) {
+        if (!teamService.existsTeam(teamName, message.getChatId()))
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+        var session = TeamActionSession.builder()
+                .command(BotCommand.REMOVE_MEMBER)
+                .teamNames(List.of(teamName))
+                .build();
+        sessionCache.add(message, session);
+        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format());
+    }
+
     private BotApiMethod<?> removeMembers(Message message) {
         StringBuilder responseText = new StringBuilder();
         TeamDto teamDto = DtoBuilder.buildTeamDto(message);
-        List<MemberDto> members = DtoBuilder.buildMemberDtoList(message);
-        for (MemberDto memberDto : members) {
+        List<MemberDto> memberDtoList = DtoBuilder.buildMemberDtoList(message);
+        memberDtoList.forEach(memberDto -> {
             try {
                 teamService.removeMemberFromTeam(teamDto, memberDto);
                 responseText.append(BotMessage.MEMBER_REMOVED_FROM_TEAM.format(memberDto.displayName())).append("\n\n");
@@ -66,18 +77,7 @@ public class RemoveMemberCommand implements CommandHandler {
             } catch (DuplicateTeamMemberException e) {
                 responseText.append(BotMessage.MEMBER_ALREADY_ADDED_TO_TEAM.format(memberDto.displayName())).append("\n\n");
             }
-        }
+        });
         return MessageBuilder.buildMessage(message, responseText.toString());
-    }
-
-    private SendMessage askForUsernames(Message message, String teamName) {
-        if (!teamService.existsTeam(teamName, message.getChatId()))
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-        var session = TeamActionSession.builder()
-                .command(BotCommand.REMOVE_MEMBER)
-                .teamNames(List.of(teamName))
-                .build();
-        sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format());
     }
 }

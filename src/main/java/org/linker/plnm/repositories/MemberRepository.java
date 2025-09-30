@@ -11,7 +11,9 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member,Long> {
 
-    Optional<Member> findByUsername(String value);
+    Optional<Member> findByUsername(String username);
+
+    Optional<Member> findByTelegramId(Long telegramId);
 
     boolean existsByUsername(String username);
 
@@ -23,4 +25,5 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     @Query(value = "DELETE FROM member_tasks WHERE task_id = :taskId", nativeQuery = true)
     void deleteAllByTaskId(@Param("taskId") Long taskId);
 
+    boolean existsByTelegramId(Long telegramId);
 }

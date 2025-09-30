@@ -2,11 +2,11 @@ package org.linker.plnm.bot.handlers.teaming;
 
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.domain.dtos.TeamDto;
-import org.linker.plnm.domain.mappers.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -16,21 +16,18 @@ import org.thymeleaf.context.Context;
 
 import java.util.List;
 
+@Service
 public class ShowTeamsCommand implements CommandHandler {
 
     private final TeamService teamService;
-
-    private final TelegramUserMapper telegramUserMapper;
 
     private final TemplateEngine templateEngine;
 
     public ShowTeamsCommand(
             TeamService teamService,
-            TelegramUserMapper telegramUserMapper,
             TemplateEngine templateEngine
     ) {
         this.teamService = teamService;
-        this.telegramUserMapper = telegramUserMapper;
         this.templateEngine = templateEngine;
     }
 

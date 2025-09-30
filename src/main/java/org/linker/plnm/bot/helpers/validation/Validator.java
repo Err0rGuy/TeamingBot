@@ -42,7 +42,7 @@ public class Validator {
             String status = chatMember.getStatus();
             return TelegramUserRole.ADMIN.isEqualTo(status) || TelegramUserRole.CREATOR.isEqualTo(status);
         } catch (TelegramApiException e) {
-            log.info("Failed to execute Multi/Broad cast message for chatId={}", message.getChatId(), e);
+            log.info("Failed to execute Multi/Broad cast message for chatGroupId={}", message.getChatId(), e);
             return false;
         }
     }

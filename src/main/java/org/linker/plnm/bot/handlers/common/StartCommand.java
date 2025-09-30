@@ -1,9 +1,8 @@
 package org.linker.plnm.bot.handlers.common;
 
 import org.linker.plnm.domain.dtos.MemberDto;
-import org.linker.plnm.domain.entities.Member;
-import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.domain.mappers.TelegramUserMapper;
+import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.services.MemberService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import org.linker.plnm.bot.handlers.CommandHandler;
 import org.linker.plnm.bot.helpers.menus.MenuManager;
 import org.linker.plnm.bot.helpers.validation.Validator;
-import java.util.Optional;
 
 
 @Service

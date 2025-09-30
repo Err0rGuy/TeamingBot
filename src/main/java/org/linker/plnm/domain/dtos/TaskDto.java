@@ -10,7 +10,7 @@ public record TaskDto(
         Long id,
         String name,
         String description,
-        List<MemberDto> members,
-        List<TeamDto> teams,
+        List<Long> memberIds,
+        List<Long> teamIds,
         Task.TaskStatus status
 ) {}

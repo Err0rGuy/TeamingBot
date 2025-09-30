@@ -21,7 +21,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     JOIN t.chatGroup g
     WHERE t.name = :name AND g.chatId = :chatId
     """)
-    boolean teamHasMember(@Param("name") String name, @Param("chatId") Long chatGroupChatId);
+    boolean teamHasMember(@Param("name") String name, @Param("chatGroupId") Long chatGroupChatId);
 
     @Transactional
     void deleteTeamByNameAndChatGroupChatId(String name, Long chatGroupChatId);

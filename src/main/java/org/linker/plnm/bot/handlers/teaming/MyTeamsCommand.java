@@ -6,6 +6,7 @@ import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -16,6 +17,7 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 
 import java.util.List;
 
+@Service
 public class MyTeamsCommand implements CommandHandler {
 
     private final TeamService teamService;

@@ -12,6 +12,6 @@ public record MemberDto(
         String lastName,
         String username,
         String displayName,
-        List<TeamDto> teams,
-        List<TaskDto> tasks
+        List<Long> teamIds,
+        List<Long> taskIds
 ) {}

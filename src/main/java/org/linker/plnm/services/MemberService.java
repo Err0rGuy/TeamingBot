@@ -34,7 +34,7 @@ public class MemberService {
         return memberRepository.existsByUsername(username);
     }
 
-    public boolean memberExists(Long id) {
-        return memberRepository.existsById(id);
+    public boolean memberExists(Long telegramId) {
+        return memberRepository.existsByTelegramId(telegramId);
     }
 }

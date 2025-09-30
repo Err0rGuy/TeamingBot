@@ -43,35 +43,39 @@ public class AddMemberCommand implements CommandHandler {
         Message message = update.getMessage();
         if (update.hasCallbackQuery()){
             String teamName = message.getText().split(" ", 2)[1].trim();
-            if (!teamService.existsTeam(teamName, message.getChatId()))
-                return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
             return askForUsernames(message, teamName);
         }
         sessionCache.remove(message);
         return addMembers(message);
     }
 
-    private BotApiMethod<?> addMembers(Message message) {
-        StringBuilder responseText = new StringBuilder();
-        TeamDto teamDto = DtoBuilder.buildTeamDto(message);
-        List<MemberDto> members = DtoBuilder.buildMemberDtoList(message);
-        for (MemberDto memberDto : members) {
-            try {
-                teamService.addMemberToTeam(teamDto, memberDto);
-                responseText.append(BotMessage.MEMBER_ADDED_TO_TEAM.format(memberDto.username())).append("\n\n");
-            } catch (TeamNotFoundException | MemberNotFoundException | DuplicateTeamMemberException e) {
-                responseText.append(e.getMessage()).append("\n\n");
-            }
-        }
-        return MessageBuilder.buildMessage(message, responseText.toString());
-    }
-
     private SendMessage askForUsernames(Message message, String teamName) {
+        if (!teamService.existsTeam(teamName, message.getChatId()))
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         var session = TeamActionSession.builder()
                 .command(BotCommand.ADD_MEMBER)
                 .teamNames(List.of(teamName))
                 .build();
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format());
+    }
+
+    private BotApiMethod<?> addMembers(Message message) {
+        StringBuilder responseText = new StringBuilder();
+        TeamDto teamDto = DtoBuilder.buildTeamDto(message);
+        List<MemberDto> membersDtoList = DtoBuilder.buildMemberDtoList(message);
+        membersDtoList.forEach(memberDto -> {
+            try {
+                teamService.addMemberToTeam(teamDto, memberDto);
+                responseText.append(BotMessage.MEMBER_ADDED_TO_TEAM.format(memberDto.username())).append("\n\n");
+            } catch (TeamNotFoundException e) {
+                responseText.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name())).append("\n\n");
+            } catch (MemberNotFoundException e) {
+                responseText.append(BotMessage.MEMBER_HAS_NOT_STARTED.format(memberDto.displayName())).append("\n\n");
+            } catch (DuplicateTeamMemberException e) {
+                responseText.append(BotMessage.MEMBER_ALREADY_ADDED_TO_TEAM.format(memberDto.displayName())).append("\n\n");
+            }
+        });
+        return MessageBuilder.buildMessage(message, responseText.toString());
     }
 }

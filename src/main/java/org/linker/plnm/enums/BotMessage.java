@@ -7,10 +7,10 @@ public enum BotMessage {
     COMMANDS_LIST(IOUtilities.readFile("static/bot_commands.html")),
     TASKS_MENU_HEADER("⦿ Select an option"),
     TEAMS_MENU_HEADER("⦿ Select an option"),
-    TASK_CREATION_MENU_HEADER("\uD83D\uDD8A Create new tasks"),
-    TASK_DELETION_MENU_HEADER("\uD83E\uDDF9 Remove tasks"),
-    TASK_CH_STATUS_MENU_HEADER("\uD83D\uDD8B Change tasks statuses"),
-    TASK_SHOWING_MENU_HEADER("\uD83D\uDC41 View tasks list"),
+    TASK_CREATION_MENU_HEADER("\uD83D\uDD8A Create new taskIds"),
+    TASK_DELETION_MENU_HEADER("\uD83E\uDDF9 Remove taskIds"),
+    TASK_CH_STATUS_MENU_HEADER("\uD83D\uDD8B Change taskIds statuses"),
+    TASK_SHOWING_MENU_HEADER("\uD83D\uDC41 View taskIds list"),
     TASK_ALREADY_ASSIGNED("❎ task '%s' already assigned"),
     TASK_CREATED("✅ task '%s' has been successfully created."),
     TASK_REMOVED("✅ task '%s' has been successfully removed."),
@@ -50,7 +50,7 @@ public enum BotMessage {
     EXPIRED_OPERATION("❌ Expired Operation!"),
     SUPER_GROUP_BROADCAST_MESSAGE("💬 New message at *%s*:\n\n%s\n\n👉 [Jump to message](%s)"),
     NORMAL_GROUP_BROADCAST_MESSAGE("💬 New message at *%s* \uD83D\uDC47"),
-    MESSAGE_SENT_TO_TEAM("✅ Message sent to '%s' team members."),
+    MESSAGE_SENT_TO_TEAM("✅ Message sent to '%s' team memberIds."),
     MESSAGE_SENT_TO_GLOBAL("✅ Message was sent to global.\n" + "⚠ Only users who started the bot will receive the message.");
 
 

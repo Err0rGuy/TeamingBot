@@ -93,7 +93,8 @@ public class Bot extends TelegramLongPollingBot {
         }
         else
             message = update.getMessage();
-        message.setText(message.getText().replace("@" + getBotUsername(), ""));
+        if (message.hasText())
+            message.setText(message.getText().replace("@" + getBotUsername(), ""));
         return message;
     }
 

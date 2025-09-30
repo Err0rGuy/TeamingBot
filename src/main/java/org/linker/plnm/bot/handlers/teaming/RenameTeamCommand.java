@@ -43,8 +43,6 @@ public class RenameTeamCommand implements CommandHandler {
         Message message = update.getMessage();
         if (update.hasCallbackQuery()){
             String teamName = message.getText().split(" ", 2)[1].trim();
-            if (!teamService.existsTeam(teamName, message.getChatId()))
-                return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
             return askForNewTeamName(message, teamName);
         }
         String teamName = sessionCache.fetch(message).getTargets().getFirst();
@@ -52,19 +50,9 @@ public class RenameTeamCommand implements CommandHandler {
         return renameTeam(message, teamName);
     }
 
-    private BotApiMethod<?> renameTeam(Message message, String teamName) {
-        var teamDto = DtoBuilder.buildTeamDto(message);
-        try {
-            teamService.renameTeam(teamName, teamDto);
-        } catch (DuplicateTeamException e) {
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(teamName));
-        } catch (TeamNotFoundException e) {
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-        }
-        return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, teamDto.name()));
-    }
-
     private SendMessage askForNewTeamName(Message message, String teamName) {
+        if (!teamService.existsTeam(teamName, message.getChatId()))
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         var session = TeamActionSession.builder()
                 .command(BotCommand.RENAME_TEAM)
                 .teamNames(List.of(teamName))
@@ -73,4 +61,15 @@ public class RenameTeamCommand implements CommandHandler {
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAME.format());
     }
 
+    private BotApiMethod<?> renameTeam(Message message, String teamName) {
+        var teamDto = DtoBuilder.buildTeamDto(message);
+        try {
+            teamService.renameTeam(teamName, teamDto);
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, teamDto.name()));
+        } catch (DuplicateTeamException e) {
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(teamName));
+        } catch (TeamNotFoundException e) {
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+        }
+    }
 }

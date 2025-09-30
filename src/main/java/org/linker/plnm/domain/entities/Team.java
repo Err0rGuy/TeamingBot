@@ -37,10 +37,10 @@ public class Team {
     private Set<Member> members = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Set<Task> tasks = new HashSet<>();
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = {CascadeType.MERGE})
     @JoinColumn(name = "chat_group_id", nullable = false)
     private ChatGroup chatGroup;
 

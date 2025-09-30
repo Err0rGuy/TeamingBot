@@ -14,6 +14,7 @@ import java.util.Set;
 @Getter
 @Setter
 public class Member {
+
     @Id
     private Long telegramId;
 
@@ -25,11 +26,11 @@ public class Member {
     private String lastName;
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members", cascade = {CascadeType.PERSIST})
+    @ManyToMany(mappedBy = "members", cascade = {CascadeType.MERGE})
     private Set<Team> teams = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.MERGE})
     private Set<Task> tasks = new HashSet<>();
 
     @Override

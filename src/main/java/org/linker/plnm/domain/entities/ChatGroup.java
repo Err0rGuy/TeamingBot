@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -20,6 +21,7 @@ public class ChatGroup {
 
     private String name;
 
-    @OneToMany(mappedBy = "chatGroup", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private Set<Team> teams;
+    @Builder.Default
+    @OneToMany(mappedBy = "chatGroup", cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    private Set<Team> teams =  new HashSet<>();
 }

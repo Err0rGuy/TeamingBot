@@ -1,5 +1,4 @@
 package org.linker.plnm.bot.handlers.teaming;
-import lombok.extern.slf4j.Slf4j;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
@@ -15,8 +14,9 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
+import java.util.Arrays;
 
-@Slf4j
+
 @Service
 public class RemoveTeamCommand implements CommandHandler {
 
@@ -43,27 +43,24 @@ public class RemoveTeamCommand implements CommandHandler {
         return removeTeam(message);
     }
 
-    private BotApiMethod<?> removeTeam(Message message) {
-        StringBuilder responseTxt = new StringBuilder();
-        var teamNames = MessageParser.findTeamNames(message.getText());
-        long chatId = message.getChatId();
-        for (String teamName :  teamNames) {
-            try {
-                teamService.removeTeam(teamName, chatId);
-            } catch (TeamNotFoundException e) {
-                responseTxt.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)).append("\n\n");
-            }
-            responseTxt.append(BotMessage.TEAM_REMOVED.format(teamName)).append("\n\n");
-        }
-        return MessageBuilder.buildMessage(message, responseTxt.toString());
-    }
-
     private SendMessage askForTeamNames(Message message) {
-        var session = TeamActionSession.builder()
-                        .command(BotCommand.REMOVE_TEAM)
-                        .build();
+        var session = TeamActionSession.builder().command(BotCommand.REMOVE_TEAM).build();
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format());
     }
 
+    private BotApiMethod<?> removeTeam(Message message) {
+        StringBuilder responseTxt = new StringBuilder();
+        var teamNames = MessageParser.findTeamNames(message.getText());
+        long chatId = message.getChatId();
+        Arrays.stream(teamNames).forEach(teamName -> {
+            try {
+                teamService.removeTeam(teamName, chatId);
+                responseTxt.append(BotMessage.TEAM_REMOVED.format(teamName)).append("\n\n");
+            } catch (TeamNotFoundException e) {
+                responseTxt.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)).append("\n\n");
+            }
+        });
+        return MessageBuilder.buildMessage(message, responseTxt.toString());
+    }
 }

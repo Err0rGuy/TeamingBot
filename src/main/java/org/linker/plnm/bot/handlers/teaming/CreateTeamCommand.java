@@ -1,4 +1,5 @@
 package org.linker.plnm.bot.handlers.teaming;
+import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
@@ -41,27 +42,26 @@ public class CreateTeamCommand implements CommandHandler {
         return createTeam(message);
     }
 
-    private BotApiMethod<?> createTeam(Message message) {
-        StringBuilder responseTxt = new StringBuilder();
-        var teamDtoList = DtoBuilder.buildTeamDtoList(message);
-        if (teamDtoList.isEmpty())
-            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
-        for (TeamDto teamDto : teamDtoList) {
-            try {
-                teamService.saveTeam(teamDto);
-            } catch (DuplicateTeamException e) {
-                responseTxt.append(BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name())).append("\n\n");
-            }
-            responseTxt.append(BotMessage.TEAM_CREATED.format(teamDto)).append("\n\n");
-        }
-        return MessageBuilder.buildMessage(message, responseTxt.toString());
-    }
-
     private SendMessage askForTeamNames(Message message) {
         var session = TeamActionSession.builder().command(BotCommand.CREATE_TEAM).build();
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), "HTML");
     }
 
-
+    private BotApiMethod<?> createTeam(Message message) {
+        StringBuilder responseTxt = new StringBuilder();
+        var teamNames = MessageParser.findTeamNames(message.getText());
+        if (teamNames.length == 0)
+            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
+        var teamDtoList = DtoBuilder.buildTeamDtoList(teamNames, message.getChat());
+        teamDtoList.forEach(teamDto -> {
+            try {
+                teamService.saveTeam(teamDto);
+                responseTxt.append(BotMessage.TEAM_CREATED.format(teamDto.name())).append("\n\n");
+            } catch (DuplicateTeamException e) {
+                responseTxt.append(BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name())).append("\n\n");
+            }
+        });
+        return MessageBuilder.buildMessage(message, responseTxt.toString());
+    }
 }
