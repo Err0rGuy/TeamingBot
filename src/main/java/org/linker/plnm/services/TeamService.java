@@ -71,7 +71,7 @@ public class TeamService {
     }
 
     public List<TeamDto> getMemberTeams(MemberDto memberDto) throws TeamNotFoundException, MemberNotFoundException {
-        var member = memberRepository.findByTelegramId(memberDto.telegramId())
+        var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
         return teamMapper.toDtoList(member.getTeams().stream().toList());
     }
@@ -100,7 +100,7 @@ public class TeamService {
             throws TeamNotFoundException, MemberNotFoundException, DuplicateTeamMemberException {
         var team = teamRepository.findTeamByNameAndChatGroupChatId(teamDto.name(), teamDto.chatGroupDto().chatId())
                 .orElseThrow(TeamNotFoundException::new);
-        var member = memberRepository.findByTelegramId(memberDto.telegramId())
+        var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
         if (team.getMembers().contains(member))
             throw new DuplicateTeamMemberException();
@@ -112,7 +112,7 @@ public class TeamService {
             throws TeamNotFoundException, MemberNotFoundException, TeamMemberNotFoundException {
         var team = teamRepository.findTeamByNameAndChatGroupChatId(teamDto.name(), teamDto.chatGroupDto().chatId())
                 .orElseThrow(TeamNotFoundException::new);
-        var member = memberRepository.findByTelegramId(memberDto.telegramId())
+        var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
         if (!team.getMembers().contains(member))
             throw new TeamMemberNotFoundException();

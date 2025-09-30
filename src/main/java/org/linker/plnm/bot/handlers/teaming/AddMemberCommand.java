@@ -67,7 +67,7 @@ public class AddMemberCommand implements CommandHandler {
         membersDtoList.forEach(memberDto -> {
             try {
                 teamService.addMemberToTeam(teamDto, memberDto);
-                responseText.append(BotMessage.MEMBER_ADDED_TO_TEAM.format(memberDto.username())).append("\n\n");
+                responseText.append(BotMessage.MEMBER_ADDED_TO_TEAM.format(memberDto.userName())).append("\n\n");
             } catch (TeamNotFoundException e) {
                 responseText.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name())).append("\n\n");
             } catch (MemberNotFoundException e) {

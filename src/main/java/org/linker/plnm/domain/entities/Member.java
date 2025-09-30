@@ -16,10 +16,10 @@ import java.util.Set;
 public class Member {
 
     @Id
-    private Long telegramId;
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    private String username;
+    private String userName;
 
     private String firstName;
 
@@ -37,20 +37,20 @@ public class Member {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Member)) return false;
-        return telegramId != null && telegramId.equals(((Member) o).telegramId);
+        return id != null && id.equals(((Member) o).id);
     }
 
     @Override
     public int hashCode() {
-        return telegramId != null ? telegramId.hashCode() : 0;
+        return id != null ? id.hashCode() : 0;
     }
 
 
     public String getDisplayName() {
-        return this.username != null
-                ? "@" + this.username
+        return this.userName != null
+                ? "@" + this.userName
                 : this.firstName != null
                 ? this.firstName
-                : this.telegramId.toString();
+                : this.id.toString();
     }
 }

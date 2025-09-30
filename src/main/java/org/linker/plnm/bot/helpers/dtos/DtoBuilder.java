@@ -48,7 +48,7 @@ public class DtoBuilder {
         String[] userNames = MessageParser.findUsernames(message.getText());
         Arrays.stream(userNames).forEach(userName -> {
             var memberDto = MemberDto.builder()
-                    .username(userName)
+                    .userName(userName)
                     .build();
             members.add(memberDto);
         });

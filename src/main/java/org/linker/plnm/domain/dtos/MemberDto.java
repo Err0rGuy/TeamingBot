@@ -7,10 +7,10 @@ import java.util.List;
 
 @Builder
 public record MemberDto(
-        Long telegramId,
+        Long id,
         String firstName,
         String lastName,
-        String username,
+        String userName,
         String displayName,
         List<Long> teamIds,
         List<Long> taskIds

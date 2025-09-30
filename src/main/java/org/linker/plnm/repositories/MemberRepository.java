@@ -1,5 +1,6 @@
 package org.linker.plnm.repositories;
 
+import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.domain.entities.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,11 +12,9 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member,Long> {
 
-    Optional<Member> findByUsername(String username);
+    Optional<Member> findByUserName(String userName);
 
-    Optional<Member> findByTelegramId(Long telegramId);
-
-    boolean existsByUsername(String username);
+    boolean existsByUserName(String userName);
 
     @Modifying @Transactional
     @Query(value = "DELETE FROM team_members WHERE team_id = :teamId", nativeQuery = true)
@@ -25,5 +24,5 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     @Query(value = "DELETE FROM member_tasks WHERE task_id = :taskId", nativeQuery = true)
     void deleteAllByTaskId(@Param("taskId") Long taskId);
 
-    boolean existsByTelegramId(Long telegramId);
+    boolean existsById(@NotNull Long id);
 }

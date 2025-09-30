@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class MessageParser {
 
-    private final static Pattern TEAM_CALL_PATTERN = Pattern.compile("#([\\p{L}0-9_]+)");
+    private final static Pattern TEAM_CALL_PATTERN = Pattern.compile("#([\\p{L}0-9_$&*^@!-]+)");
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("@([A-Za-z0-9_]{5,32})");
 

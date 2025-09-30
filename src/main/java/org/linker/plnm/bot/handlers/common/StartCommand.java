@@ -44,7 +44,7 @@ public class StartCommand implements CommandHandler {
         Message message = update.getMessage();
         User user = message.getFrom();
         MemberDto memberDto = telegramUserMapper.toDto(user);
-        if (!memberService.memberExists(memberDto.telegramId()))
+        if (!memberService.memberExists(memberDto.id()))
             memberService.saveMember(memberDto);
         return (validation.isGroup(message)) ? MenuManager.startMenu(message) : MenuManager.botPVStartMenu(message);
     }

@@ -38,6 +38,7 @@ public class ShowTeamsCommand implements CommandHandler {
 
     @Override
     public BotApiMethod<?> handle(Update update) {
+        System.out.println("here");
         Message message = update.getMessage();
         List<TeamDto> teams;
         try {

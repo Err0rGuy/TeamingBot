@@ -24,17 +24,17 @@ public class MemberService {
     }
 
     public MemberDto saveMember(MemberDto memberDto) {
-        if (memberRepository.existsByUsername(memberDto.username()))
+        if (memberRepository.existsByUserName(memberDto.userName()))
             throw new MemberDuplicateException();
         var member = memberRepository.save(memberMapper.toEntity(memberDto));
         return memberMapper.toDto(member);
     }
 
     public boolean memberExists(String username) {
-        return memberRepository.existsByUsername(username);
+        return memberRepository.existsByUserName(username);
     }
 
     public boolean memberExists(Long telegramId) {
-        return memberRepository.existsByTelegramId(telegramId);
+        return memberRepository.existsById(telegramId);
     }
 }
