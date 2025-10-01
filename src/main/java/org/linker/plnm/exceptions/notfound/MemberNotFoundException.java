@@ -1,4 +1,4 @@
-package org.linker.plnm.exceptions.teaming;
+package org.linker.plnm.exceptions.notfound;
 
 public class MemberNotFoundException extends RuntimeException {
 

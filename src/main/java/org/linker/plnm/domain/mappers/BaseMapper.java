@@ -2,7 +2,7 @@ package org.linker.plnm.domain.mappers;
 
 import java.util.List;
 
-public interface Mapper<Entity, Dto> {
+public interface BaseMapper<Entity, Dto> {
 
     Entity toEntity(Dto dto);
 

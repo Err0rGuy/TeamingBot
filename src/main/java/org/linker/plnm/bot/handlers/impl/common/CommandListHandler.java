@@ -11,11 +11,11 @@ import org.linker.plnm.bot.handlers.UpdateHandler;
 
 
 @Component
-public class CommandListUpdate implements UpdateHandler {
+public class CommandListHandler implements UpdateHandler {
 
     private final SessionCache sessionCache;
 
-    public CommandListUpdate(SessionCache sessionCache) {
+    public CommandListHandler(SessionCache sessionCache) {
         this.sessionCache = sessionCache;
     }
 
@@ -24,6 +24,9 @@ public class CommandListUpdate implements UpdateHandler {
         return BotCommand.COMMANDS;
     }
 
+    /**
+     * Showing commands list
+     */
     @Override
     public BotApiMethod<?> handle(Update update) {
         sessionCache.remove(update.getMessage());

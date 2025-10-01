@@ -2,11 +2,13 @@ package org.linker.plnm.services;
 
 
 import org.linker.plnm.domain.dtos.MemberDto;
-import org.linker.plnm.domain.mappers.MemberMapper;
-import org.linker.plnm.exceptions.teaming.MemberDuplicateException;
-import org.linker.plnm.exceptions.teaming.MemberNotFoundException;
+import org.linker.plnm.domain.mappers.MemberBaseMapper;
+import org.linker.plnm.exceptions.duplication.DuplicateMemberException;
+import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class MemberService {
@@ -14,11 +16,11 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
 
-    private final MemberMapper memberMapper;
+    private final MemberBaseMapper memberMapper;
 
     public MemberService(
             MemberRepository memberRepository,
-            MemberMapper memberMapper
+            MemberBaseMapper memberMapper
     ) {
         this.memberRepository = memberRepository;
         this.memberMapper = memberMapper;
@@ -26,15 +28,19 @@ public class MemberService {
 
     public MemberDto saveMember(MemberDto memberDto) {
         if (memberRepository.existsByUserName(memberDto.userName()))
-            throw new MemberDuplicateException();
+            throw new DuplicateMemberException();
         var member = memberRepository.save(memberMapper.toEntity(memberDto));
         return memberMapper.toDto(member);
     }
 
-    public MemberDto findMemberByUserName(String userName) {
+    public MemberDto findMember(String userName) {
         var member = memberRepository.findByUserName(userName)
                 .orElseThrow(MemberNotFoundException::new);
         return memberMapper.toDto(member);
+    }
+
+    public List<MemberDto> findAllMembers() {
+        return memberMapper.toDtoList(memberRepository.findAll());
     }
 
     public boolean memberExists(String username) {

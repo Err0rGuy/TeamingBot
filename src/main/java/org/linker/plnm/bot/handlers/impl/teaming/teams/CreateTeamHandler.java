@@ -1,8 +1,9 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.exceptions.teaming.DuplicateTeamException;
+import org.linker.plnm.exceptions.duplication.DuplicateTeamException;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -15,14 +16,17 @@ import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
-public class CreateTeamUpdate implements UpdateHandler {
+public class CreateTeamHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
     private final SessionCache sessionCache;
 
-    public CreateTeamUpdate(TeamService teamService, SessionCache sessionCache) {
+    public CreateTeamHandler(TeamService teamService, SessionCache sessionCache) {
         this.teamService = teamService;
         this.sessionCache = sessionCache;
     }
@@ -38,29 +42,49 @@ public class CreateTeamUpdate implements UpdateHandler {
         if (update.hasCallbackQuery())
             return askForTeamNames(message);
         sessionCache.remove(message);
-        return createTeam(message);
+        return createTeams(message);
     }
 
+    /**
+     * Asking for team names
+     */
     private SendMessage askForTeamNames(Message message) {
         var session = TeamActionSession.builder().command(BotCommand.CREATE_TEAM).build();
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), "HTML");
     }
 
-    private BotApiMethod<?> createTeam(Message message) {
-        StringBuilder responseTxt = new StringBuilder();
-        var teamNames = MessageParser.findTeamNames(message.getText());
-        if (teamNames.length == 0)
+    /**
+     * Creating new teams
+     */
+    private BotApiMethod<?> createTeams(Message message) {
+        List<String> responseTxt = new ArrayList<>();
+        var teams = resolveTeams(message);
+
+        if (teams.isEmpty())
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
-        var teamDtoList = DtoBuilder.buildTeamDtoList(teamNames, message.getChat());
-        teamDtoList.forEach(teamDto -> {
-            try {
-                teamService.saveTeam(teamDto);
-                responseTxt.append(BotMessage.TEAM_CREATED.format(teamDto.name())).append("\n\n");
-            } catch (DuplicateTeamException e) {
-                responseTxt.append(BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name())).append("\n\n");
-            }
-        });
-        return MessageBuilder.buildMessage(message, responseTxt.toString());
+
+        teams.forEach(teamDto -> responseTxt.add(processCreateTeam(teamDto)));
+        return MessageBuilder.buildMessage(message, String.join("\n\n", responseTxt));
+    }
+
+    /**
+     * Retuning teamDto list
+     */
+    private List<TeamDto> resolveTeams(Message message) {
+        var teamNames = MessageParser.findTeamNames(message.getText());
+        return DtoBuilder.buildTeamDtoList(teamNames, message.getChat());
+    }
+
+    /**
+     * Processing team creation
+     */
+    private String processCreateTeam(TeamDto teamDto) {
+        try {
+            teamService.saveTeam(teamDto);
+            return BotMessage.TEAM_CREATED.format(teamDto.name());
+        } catch (DuplicateTeamException e) {
+            return BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name());
+        }
     }
 }

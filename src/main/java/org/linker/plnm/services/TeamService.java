@@ -5,9 +5,13 @@ import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.entities.ChatGroup;
 import org.linker.plnm.domain.entities.Member;
 import org.linker.plnm.domain.entities.Team;
-import org.linker.plnm.domain.mappers.ChatGroupMapper;
-import org.linker.plnm.domain.mappers.TeamMapper;
-import org.linker.plnm.exceptions.teaming.*;
+import org.linker.plnm.domain.mappers.ChatGroupBaseMapper;
+import org.linker.plnm.domain.mappers.TeamBaseMapper;
+import org.linker.plnm.exceptions.duplication.DuplicateTeamException;
+import org.linker.plnm.exceptions.duplication.DuplicateTeamMemberException;
+import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamMemberNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
@@ -25,16 +29,16 @@ public class TeamService {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private final ChatGroupMapper chatGroupMapper;
+    private final ChatGroupBaseMapper chatGroupMapper;
 
-    private final TeamMapper teamMapper;
+    private final TeamBaseMapper teamMapper;
 
     public TeamService(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            ChatGroupMapper chatGroupMapper,
-            TeamMapper teamMapper
+            ChatGroupBaseMapper chatGroupMapper,
+            TeamBaseMapper teamMapper
     ) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
@@ -73,7 +77,7 @@ public class TeamService {
                 }).orElseThrow(TeamNotFoundException::new);
     }
 
-    public TeamDto getTeamByNameAndChatId(String teamName, Long chatId) {
+    public TeamDto findTeam(String teamName, Long chatId) {
         var teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
                 .orElseThrow(TeamNotFoundException::new);
         return teamMapper.toDto(teamOpt);
@@ -95,7 +99,7 @@ public class TeamService {
         return teamMapper.toDtoList(teams);
     }
 
-    public boolean existsTeam(String teamName, Long chatId) throws TeamNotFoundException {
+    public boolean teamExists(String teamName, Long chatId) throws TeamNotFoundException {
         return teamRepository.existsByNameAndChatGroupChatId(teamName, chatId);
     }
 
@@ -114,7 +118,7 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamDto addMemberToTeam(Long chatId, String teamName, Long memberId)
+    public TeamDto addTeamMember(Long chatId, String teamName, Long memberId)
             throws TeamNotFoundException, MemberNotFoundException, DuplicateTeamMemberException {
 
         Team team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
@@ -132,7 +136,7 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamDto removeMemberFromTeam(Long chatId, String teamName, Long memberId)
+    public TeamDto removeTeamMember(Long chatId, String teamName, Long memberId)
             throws TeamNotFoundException, MemberNotFoundException, TeamMemberNotFoundException {
 
         Team team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)

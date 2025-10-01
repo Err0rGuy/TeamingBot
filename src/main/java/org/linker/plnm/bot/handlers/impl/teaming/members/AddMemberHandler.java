@@ -3,9 +3,9 @@ package org.linker.plnm.bot.handlers.impl.teaming.members;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.exceptions.teaming.DuplicateTeamMemberException;
-import org.linker.plnm.exceptions.teaming.MemberNotFoundException;
-import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
+import org.linker.plnm.exceptions.duplication.DuplicateTeamMemberException;
+import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.services.MemberService;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ import java.util.List;
 
 
 @Service
-public class AddMemberUpdate implements UpdateHandler {
+public class AddMemberHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
@@ -31,7 +31,7 @@ public class AddMemberUpdate implements UpdateHandler {
 
     private final SessionCache sessionCache;
 
-    public AddMemberUpdate(
+    public AddMemberHandler(
             TeamService teamService,
             MemberService memberService,
             SessionCache sessionCache) {
@@ -45,12 +45,12 @@ public class AddMemberUpdate implements UpdateHandler {
         return BotCommand.ADD_MEMBER;
     }
 
-    @Override
+    @Override /// Adding new members to a team
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         String teamName;
         if (update.hasCallbackQuery()){
-            teamName = String.valueOf(MessageParser.extractSecondPart(message.getText()));
+            teamName = MessageParser.extractSecondPart(message.getText()).orElse("");
             return askForUsernames(message, teamName);
         }
         var fetchedSession = sessionCache.fetch(message);
@@ -61,8 +61,9 @@ public class AddMemberUpdate implements UpdateHandler {
         return addMembers(message, teamName);
     }
 
+    /// Asking for members usernames
     private SendMessage askForUsernames(Message message, String teamName) {
-        if (!teamService.existsTeam(teamName, message.getChatId()))
+        if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         var session = TeamActionSession.builder()
                 .command(BotCommand.ADD_MEMBER)
@@ -72,6 +73,7 @@ public class AddMemberUpdate implements UpdateHandler {
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format(), "HTML");
     }
 
+    /// Parsing and gathering usernames from message text
     private BotApiMethod<?> addMembers(Message message, String teamName) {
         var userNames = MessageParser.findUsernames(message.getText());
         if (userNames.length == 0)
@@ -82,11 +84,13 @@ public class AddMemberUpdate implements UpdateHandler {
         return MessageBuilder.buildMessage(message, String.join("\n\n", responses));
     }
 
-
+    /**
+     * Adding member to team
+      */
     private String processAddMember(String userName, String teamName, Long chatId) {
         try {
-            var memberDto = memberService.findMemberByUserName(userName);
-            teamService.addMemberToTeam(chatId, teamName, memberDto.id());
+            var memberDto = memberService.findMember(userName);
+            teamService.addTeamMember(chatId, teamName, memberDto.id());
             return BotMessage.MEMBER_ADDED_TO_TEAM.format(memberDto.displayName());
         } catch (TeamNotFoundException e) {
             return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName);

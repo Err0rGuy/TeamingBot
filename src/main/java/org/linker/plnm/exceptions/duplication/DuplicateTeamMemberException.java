@@ -1,4 +1,4 @@
-package org.linker.plnm.exceptions.teaming;
+package org.linker.plnm.exceptions.duplication;
 
 public class DuplicateTeamMemberException extends RuntimeException {
 

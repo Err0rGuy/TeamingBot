@@ -1,4 +1,4 @@
-package org.linker.plnm.bot;
+package org.linker.plnm.bot.senders;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
+import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -65,11 +66,10 @@ public class Bot extends TelegramLongPollingBot {
             update.setMessage(extractMessage(update));
             try {
                 botApiMethod = detector.dispatch(update);
-                if (botApiMethod != null) {
+                if (botApiMethod != null)
                     execute(botApiMethod);
-                }
             } catch (TelegramApiException e) {
-                log.error("Telegram API exception while executing message!", e);
+                log.error("Failed to execute message!", e);
             }
         });
         try {

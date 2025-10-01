@@ -1,7 +1,7 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
-import org.linker.plnm.exceptions.teaming.TeamNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -14,17 +14,19 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 @Service
-public class RemoveTeamUpdate implements UpdateHandler {
+public class RemoveTeamHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
     private final SessionCache sessionCache;
 
-    public RemoveTeamUpdate(TeamService teamService, SessionCache sessionCache) {
+    public RemoveTeamHandler(TeamService teamService, SessionCache sessionCache) {
         this.teamService = teamService;
         this.sessionCache = sessionCache;
     }
@@ -40,9 +42,12 @@ public class RemoveTeamUpdate implements UpdateHandler {
         if (update.hasCallbackQuery())
             return askForTeamNames(message);
         sessionCache.remove(message);
-        return removeTeam(message);
+        return removeTeams(message);
     }
 
+    /**
+     * Asking team names to remove
+     */
     private SendMessage askForTeamNames(Message message) {
         if (!teamService.anyTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
@@ -51,20 +56,28 @@ public class RemoveTeamUpdate implements UpdateHandler {
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), "HTML");
     }
 
-    private BotApiMethod<?> removeTeam(Message message) {
-        StringBuilder responseTxt = new StringBuilder();
+    /**
+     * Removing teams
+      */
+    private BotApiMethod<?> removeTeams(Message message) {
+        List<String> responseTxt = new ArrayList<>();
         var teamNames = MessageParser.findTeamNames(message.getText());
         if(teamNames.length == 0)
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
         long chatId = message.getChatId();
-        Arrays.stream(teamNames).forEach(teamName -> {
-            try {
-                teamService.removeTeam(teamName, chatId);
-                responseTxt.append(BotMessage.TEAM_REMOVED.format(teamName)).append("\n\n");
-            } catch (TeamNotFoundException e) {
-                responseTxt.append(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)).append("\n\n");
-            }
-        });
-        return MessageBuilder.buildMessage(message, responseTxt.toString());
+        Arrays.stream(teamNames).forEach(teamName -> responseTxt.add(processRemoveTeam(teamName, chatId)));
+        return MessageBuilder.buildMessage(message, String.join("\n\n", responseTxt));
+    }
+
+    /**
+     * Processing team deletion
+     */
+    private String processRemoveTeam(String teamName, Long chatId) {
+        try {
+            teamService.removeTeam(teamName, chatId);
+            return BotMessage.TEAM_REMOVED.format(teamName);
+        } catch (TeamNotFoundException e) {
+            return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName);
+        }
     }
 }

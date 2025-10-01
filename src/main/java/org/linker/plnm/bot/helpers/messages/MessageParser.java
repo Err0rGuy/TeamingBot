@@ -90,12 +90,12 @@ public class MessageParser {
 
     public static Optional<String> extractFirstPart(String text) {
         var parts = text.split(" ", 2);
-        return parts.length > 1 ? Optional.of(parts[1].trim()) : Optional.empty();
+        return Optional.of(parts[0].trim());
     }
 
     public static Optional<String> extractSecondPart(String text) {
         var parts = text.split(" ", 2);
-        return parts.length > 1 ? Optional.of(parts[0].trim()) : Optional.empty();
+        return parts.length > 1 ? Optional.of(parts[1].trim()) : Optional.empty();
     }
 
 

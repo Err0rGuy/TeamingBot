@@ -2,7 +2,7 @@ package org.linker.plnm.bot.handlers.impl.common;
 
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.domain.dtos.MemberDto;
-import org.linker.plnm.domain.mappers.TelegramUserMapper;
+import org.linker.plnm.domain.mappers.TelegramUserBaseMapper;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.services.MemberService;
 import org.springframework.context.annotation.Lazy;
@@ -17,21 +17,21 @@ import org.linker.plnm.bot.helpers.validation.Validator;
 
 
 @Service
-public class StartUpdate implements UpdateHandler {
+public class StartHandler implements UpdateHandler {
 
     private final Validator validation;
 
     private final MemberService memberService;
 
-    private final TelegramUserMapper telegramUserMapper;
+    private final TelegramUserBaseMapper telegramUserMapper;
 
     private final SessionCache sessionCache;
 
-    public StartUpdate(
+    public StartHandler(
             @Lazy Validator validation,
             MemberService memberService,
-            TelegramUserMapper telegramUserMapper, SessionCache sessionCache
-    ) {
+            TelegramUserBaseMapper telegramUserMapper,
+            SessionCache sessionCache) {
         this.memberService = memberService;
         this.validation = validation;
         this.telegramUserMapper = telegramUserMapper;
@@ -43,6 +43,9 @@ public class StartUpdate implements UpdateHandler {
         return BotCommand.START;
     }
 
+    /**
+     * On bot start command
+     */
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();

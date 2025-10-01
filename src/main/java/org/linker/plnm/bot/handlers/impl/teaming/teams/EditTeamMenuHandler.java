@@ -1,6 +1,7 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 
 import org.linker.plnm.bot.helpers.menus.MenuManager;
+import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.services.TeamService;
@@ -15,16 +16,15 @@ import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 @Service
-public class EditTeamMenuUpdate implements UpdateHandler {
+public class EditTeamMenuHandler implements UpdateHandler {
 
     private final SessionCache sessionCache;
 
     private final TeamService teamService;
 
-    public EditTeamMenuUpdate(
+    public EditTeamMenuHandler(
             SessionCache sessionCache,
-            TeamService teamService
-    ) {
+            TeamService teamService) {
         this.sessionCache = sessionCache;
         this.teamService = teamService;
     }
@@ -34,7 +34,7 @@ public class EditTeamMenuUpdate implements UpdateHandler {
         return BotCommand.EDIT_TEAM_MENU;
     }
 
-    @Override
+    @Override /// Returning team edit menu
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         if (update.hasCallbackQuery())
@@ -43,6 +43,7 @@ public class EditTeamMenuUpdate implements UpdateHandler {
         return editTeam(message);
     }
 
+    /// Asking for team name to edit
     private SendMessage askForTeamName(Message message) {
         if (!teamService.anyTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
@@ -52,9 +53,10 @@ public class EditTeamMenuUpdate implements UpdateHandler {
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAME.format());
     }
 
+    /// Returning team edit menu
     private BotApiMethod<?> editTeam(Message message) {
-        String teamName = message.getText().split(" ", 2)[0].trim();
-        if (!teamService.existsTeam(teamName, message.getChatId()))
+        String teamName = MessageParser.extractFirstPart(message.getText()).orElse("");
+        if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         return MenuManager.editTeamMenu(message, teamName);
     }

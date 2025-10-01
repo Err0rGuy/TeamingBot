@@ -9,11 +9,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 
 @Service
-public class TeamsManuUpdate implements UpdateHandler {
+public class TeamsManuHandler implements UpdateHandler {
 
     private final SessionCache sessionCache;
 
-    public TeamsManuUpdate(SessionCache sessionCache) {
+    public TeamsManuHandler(SessionCache sessionCache) {
         this.sessionCache = sessionCache;
     }
 
@@ -22,7 +22,7 @@ public class TeamsManuUpdate implements UpdateHandler {
         return BotCommand.TEAMS_MENU;
     }
 
-    @Override
+    @Override /// Returning teaming actions menu
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         sessionCache.remove(message);
