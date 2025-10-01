@@ -24,7 +24,7 @@ public class Validator {
         return message.getChat().isGroupChat() || message.getChat().isSuperGroupChat();
     }
 
-    public boolean illegalCommand(BotCommand command, Message message) {
+    public boolean illegalCommand(BotCommand command, Message message) throws TelegramApiException {
         return command.isPrivileged() && !isAdmin(message);
     }
 
@@ -33,17 +33,12 @@ public class Validator {
     }
 
     /// Check that message sender is admin or not
-    public boolean isAdmin(@NotNull Message message) {
+    public boolean isAdmin(@NotNull Message message) throws TelegramApiException {
         GetChatMember getChatMember = new GetChatMember();
         getChatMember.setChatId(message.getChatId());
         getChatMember.setUserId(message.getFrom().getId());
-        try {
-            ChatMember chatMember = sender.execute(getChatMember);
-            String status = chatMember.getStatus();
-            return TelegramUserRole.ADMIN.isEqualTo(status) || TelegramUserRole.CREATOR.isEqualTo(status);
-        } catch (TelegramApiException e) {
-            log.info("Failed to execute Multi/Broad cast message for chatGroupId={}", message.getChatId(), e);
-            return false;
-        }
+        ChatMember chatMember = sender.execute(getChatMember);
+        String status = chatMember.getStatus();
+        return TelegramUserRole.ADMIN.isEqualTo(status) || TelegramUserRole.CREATOR.isEqualTo(status);
     }
 }

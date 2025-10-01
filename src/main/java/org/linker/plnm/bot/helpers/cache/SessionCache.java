@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.linker.plnm.bot.sessions.OperationSession;
 
+import java.util.Optional;
+
 @Component
 public class SessionCache {
 
@@ -32,9 +34,9 @@ public class SessionCache {
         return cacheUtilities.exists(key);
     }
 
-    public OperationSession fetch(Message message) {
+    public Optional<OperationSession> fetch(Message message) {
         String key = getCacheKey(message.getChatId(), message.getFrom().getId());
-        return cacheUtilities.get(key);
+        return Optional.ofNullable(cacheUtilities.get(key));
     }
 
     public void remove(Message message) {

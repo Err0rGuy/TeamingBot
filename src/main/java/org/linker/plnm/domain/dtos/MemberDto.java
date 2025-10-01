@@ -14,4 +14,12 @@ public record MemberDto(
         String displayName,
         List<Long> teamIds,
         List<Long> taskIds
-) {}
+) {
+    public String displayName() {
+        return this.userName != null
+            ? "@" + this.userName
+            : this.firstName != null
+            ? this.firstName
+            : this.id.toString();
+    }
+}

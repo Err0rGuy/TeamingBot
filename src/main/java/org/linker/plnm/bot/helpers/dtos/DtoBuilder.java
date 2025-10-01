@@ -22,14 +22,14 @@ public class DtoBuilder {
     public static TeamDto buildTeamDto(Message message) {
         return TeamDto.builder()
                 .name(message.getText().trim())
-                .chatGroupDto(buildChatGroupDto(message.getChat()))
+                .chatGroup(buildChatGroupDto(message.getChat()))
                 .build();
     }
 
     private static TeamDto buildTeamDto(String teamName, ChatGroupDto chatGroupDto) {
         return TeamDto.builder()
                 .name(teamName)
-                .chatGroupDto(chatGroupDto)
+                .chatGroup(chatGroupDto)
                 .build();
     }
 

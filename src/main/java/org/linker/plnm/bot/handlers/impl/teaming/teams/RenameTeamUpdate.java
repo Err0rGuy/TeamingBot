@@ -1,5 +1,6 @@
-package org.linker.plnm.bot.handlers.teaming;
+package org.linker.plnm.bot.handlers.impl.teaming.teams;
 
+import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.DuplicateTeamException;
@@ -10,7 +11,7 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.linker.plnm.bot.handlers.CommandHandler;
+import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
@@ -19,13 +20,13 @@ import java.util.List;
 
 
 @Service
-public class RenameTeamCommand implements CommandHandler {
+public class RenameTeamUpdate implements UpdateHandler {
 
     private final TeamService teamService;
 
     private final SessionCache sessionCache;
 
-    public RenameTeamCommand(
+    public RenameTeamUpdate(
             TeamService teamService,
             SessionCache sessionCache
     ) {
@@ -41,11 +42,15 @@ public class RenameTeamCommand implements CommandHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        if (update.hasCallbackQuery()){
-            String teamName = message.getText().split(" ", 2)[1].trim();
+        String teamName;
+        if (update.hasCallbackQuery()) {
+            teamName = String.valueOf(MessageParser.extractSecondPart(message.getText()));
             return askForNewTeamName(message, teamName);
         }
-        String teamName = sessionCache.fetch(message).getTargets().getFirst();
+        var session = sessionCache.fetch(message);
+        if (session.isEmpty())
+            return null;
+        teamName = session.get().getTargets().getFirst();
         sessionCache.remove(message);
         return renameTeam(message, teamName);
     }
@@ -62,12 +67,12 @@ public class RenameTeamCommand implements CommandHandler {
     }
 
     private BotApiMethod<?> renameTeam(Message message, String teamName) {
-        var teamDto = DtoBuilder.buildTeamDto(message);
+        var newTeam = DtoBuilder.buildTeamDto(message);
         try {
-            teamService.renameTeam(teamName, teamDto);
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, teamDto.name()));
+            teamService.renameTeam(teamName, newTeam);
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_RENAMED.format(teamName, newTeam.name()));
         } catch (DuplicateTeamException e) {
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(teamName));
+            return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(newTeam.name()));
         } catch (TeamNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
         }

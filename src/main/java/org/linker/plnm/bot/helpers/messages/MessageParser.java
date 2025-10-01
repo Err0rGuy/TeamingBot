@@ -3,10 +3,7 @@ package org.linker.plnm.bot.helpers.messages;
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.domain.entities.Task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -89,6 +86,16 @@ public class MessageParser {
             tasks.add(mapper.apply(matcher));
         }
         return tasks;
+    }
+
+    public static Optional<String> extractFirstPart(String text) {
+        var parts = text.split(" ", 2);
+        return parts.length > 1 ? Optional.of(parts[1].trim()) : Optional.empty();
+    }
+
+    public static Optional<String> extractSecondPart(String text) {
+        var parts = text.split(" ", 2);
+        return parts.length > 1 ? Optional.of(parts[0].trim()) : Optional.empty();
     }
 
 

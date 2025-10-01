@@ -3,6 +3,7 @@ package org.linker.plnm.services;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.entities.ChatGroup;
+import org.linker.plnm.domain.entities.Member;
 import org.linker.plnm.domain.entities.Team;
 import org.linker.plnm.domain.mappers.ChatGroupMapper;
 import org.linker.plnm.domain.mappers.TeamMapper;
@@ -11,6 +12,8 @@ import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -41,7 +44,7 @@ public class TeamService {
     }
 
     public TeamDto saveTeam(TeamDto teamDto) throws DuplicateTeamException {
-        var chatGroupDto = teamDto.chatGroupDto();
+        var chatGroupDto = teamDto.chatGroup();
         if(teamRepository.existsByNameAndChatGroupChatId(teamDto.name(), chatGroupDto.chatId()))
             throw new DuplicateTeamException();
         var chatGroup = chatGroupRepository.findByChatId(chatGroupDto.chatId())
@@ -59,7 +62,7 @@ public class TeamService {
     }
 
     public TeamDto updateTeam(TeamDto teamDto) throws TeamNotFoundException {
-        var chatGroupDto = teamDto.chatGroupDto();
+        var chatGroupDto = teamDto.chatGroup();
         return teamRepository.findTeamByNameAndChatGroupChatId(teamDto.name(), chatGroupDto.chatId())
                 .map(exisitingTeam -> {
                     Team teamEntity = teamMapper.toEntity(teamDto);
@@ -70,15 +73,25 @@ public class TeamService {
                 }).orElseThrow(TeamNotFoundException::new);
     }
 
+    public TeamDto getTeamByNameAndChatId(String teamName, Long chatId) {
+        var teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
+                .orElseThrow(TeamNotFoundException::new);
+        return teamMapper.toDto(teamOpt);
+    }
+
     public List<TeamDto> getMemberTeams(MemberDto memberDto) throws TeamNotFoundException, MemberNotFoundException {
         var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
-        return teamMapper.toDtoList(member.getTeams().stream().toList());
+        var teams = member.getTeams().stream().toList();
+        if (teams.isEmpty())
+            throw new TeamNotFoundException();
+        return teamMapper.toDtoList(teams);
     }
 
-    public List<TeamDto> getAllGroupTeams(Long chatId) throws TeamNotFoundException {
-        var teams = teamRepository.findAllByChatGroup_ChatId(chatId)
-                .orElseThrow(TeamNotFoundException::new);
+    public List<TeamDto> getAllGroupTeams(Long chatId) {
+        var teams = teamRepository.findAllByChatGroupChatId(chatId);
+        if (teams.isEmpty())
+            throw new TeamNotFoundException();
         return teamMapper.toDtoList(teams);
     }
 
@@ -86,8 +99,12 @@ public class TeamService {
         return teamRepository.existsByNameAndChatGroupChatId(teamName, chatId);
     }
 
+    public boolean anyTeamExists(Long chatId) {
+        return teamRepository.existsAllByChatGroupChatId(chatId);
+    }
+
     public TeamDto renameTeam(String oldName, TeamDto teamDto) throws DuplicateTeamException, TeamNotFoundException {
-        var chatGroupDto = teamDto.chatGroupDto();
+        var chatGroupDto = teamDto.chatGroup();
         if(teamRepository.existsByNameAndChatGroupChatId(teamDto.name(), chatGroupDto.chatId()))
             throw new DuplicateTeamException();
         var team = teamRepository.findTeamByNameAndChatGroupChatId(oldName, chatGroupDto.chatId())
@@ -96,26 +113,38 @@ public class TeamService {
         return teamMapper.toDto(teamRepository.save(team));
     }
 
-    public TeamDto addMemberToTeam(TeamDto teamDto, MemberDto memberDto)
+    @Transactional
+    public TeamDto addMemberToTeam(Long chatId, String teamName, Long memberId)
             throws TeamNotFoundException, MemberNotFoundException, DuplicateTeamMemberException {
-        var team = teamRepository.findTeamByNameAndChatGroupChatId(teamDto.name(), teamDto.chatGroupDto().chatId())
+
+        Team team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
                 .orElseThrow(TeamNotFoundException::new);
-        var member = memberRepository.findById(memberDto.id())
+
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
-        if (team.getMembers().contains(member))
+
+        if (team.getMembers().contains(member)) {
             throw new DuplicateTeamMemberException();
+        }
+
         team.getMembers().add(member);
         return teamMapper.toDto(teamRepository.save(team));
     }
 
-    public TeamDto removeMemberFromTeam(TeamDto teamDto, MemberDto memberDto)
+    @Transactional
+    public TeamDto removeMemberFromTeam(Long chatId, String teamName, Long memberId)
             throws TeamNotFoundException, MemberNotFoundException, TeamMemberNotFoundException {
-        var team = teamRepository.findTeamByNameAndChatGroupChatId(teamDto.name(), teamDto.chatGroupDto().chatId())
+
+        Team team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
                 .orElseThrow(TeamNotFoundException::new);
-        var member = memberRepository.findById(memberDto.id())
+
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
-        if (!team.getMembers().contains(member))
+
+        if (!team.getMembers().contains(member)) {
             throw new TeamMemberNotFoundException();
+        }
+
         team.getMembers().remove(member);
         return teamMapper.toDto(teamRepository.save(team));
     }

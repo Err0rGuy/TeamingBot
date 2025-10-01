@@ -1,6 +1,5 @@
-package org.linker.plnm.bot.handlers.teaming;
+package org.linker.plnm.bot.handlers.impl.teaming.teams;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
-import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.exceptions.teaming.DuplicateTeamException;
@@ -10,20 +9,20 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.linker.plnm.bot.handlers.CommandHandler;
+import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 @Service
-public class CreateTeamCommand implements CommandHandler {
+public class CreateTeamUpdate implements UpdateHandler {
 
     private final TeamService teamService;
 
     private final SessionCache sessionCache;
 
-    public CreateTeamCommand(TeamService teamService, SessionCache sessionCache) {
+    public CreateTeamUpdate(TeamService teamService, SessionCache sessionCache) {
         this.teamService = teamService;
         this.sessionCache = sessionCache;
     }

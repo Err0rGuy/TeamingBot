@@ -63,8 +63,8 @@ public class Bot extends TelegramLongPollingBot {
         Future<?> future = executorService.submit(() -> {
             BotApiMethod<?> botApiMethod;
             update.setMessage(extractMessage(update));
-            botApiMethod = detector.dispatch(update);
             try {
+                botApiMethod = detector.dispatch(update);
                 if (botApiMethod != null) {
                     execute(botApiMethod);
                 }
@@ -93,9 +93,8 @@ public class Bot extends TelegramLongPollingBot {
         }
         else
             message = update.getMessage();
-        if (message.hasText())
+        if (message != null && message.hasText())
             message.setText(message.getText().replace("@" + getBotUsername(), ""));
         return message;
     }
-
 }

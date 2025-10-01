@@ -26,11 +26,11 @@ public class Member {
     private String lastName;
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members", cascade = {CascadeType.MERGE})
+    @ManyToMany(mappedBy = "members", cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Set<Team> teams = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.MERGE})
+    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Set<Task> tasks = new HashSet<>();
 
     @Override

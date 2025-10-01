@@ -1,5 +1,6 @@
-package org.linker.plnm.bot.handlers.common;
+package org.linker.plnm.bot.handlers.impl.common;
 
+import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.mappers.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
@@ -10,13 +11,13 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
-import org.linker.plnm.bot.handlers.CommandHandler;
+import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.menus.MenuManager;
 import org.linker.plnm.bot.helpers.validation.Validator;
 
 
 @Service
-public class StartCommand implements CommandHandler {
+public class StartUpdate implements UpdateHandler {
 
     private final Validator validation;
 
@@ -24,14 +25,17 @@ public class StartCommand implements CommandHandler {
 
     private final TelegramUserMapper telegramUserMapper;
 
-    public StartCommand(
+    private final SessionCache sessionCache;
+
+    public StartUpdate(
             @Lazy Validator validation,
             MemberService memberService,
-            TelegramUserMapper telegramUserMapper
+            TelegramUserMapper telegramUserMapper, SessionCache sessionCache
     ) {
         this.memberService = memberService;
         this.validation = validation;
         this.telegramUserMapper = telegramUserMapper;
+        this.sessionCache = sessionCache;
     }
 
     @Override
@@ -42,6 +46,7 @@ public class StartCommand implements CommandHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
+        sessionCache.remove(message);
         User user = message.getFrom();
         MemberDto memberDto = telegramUserMapper.toDto(user);
         if (!memberService.memberExists(memberDto.id()))

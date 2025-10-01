@@ -4,6 +4,7 @@ package org.linker.plnm.services;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.mappers.MemberMapper;
 import org.linker.plnm.exceptions.teaming.MemberDuplicateException;
+import org.linker.plnm.exceptions.teaming.MemberNotFoundException;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,12 @@ public class MemberService {
         if (memberRepository.existsByUserName(memberDto.userName()))
             throw new MemberDuplicateException();
         var member = memberRepository.save(memberMapper.toEntity(memberDto));
+        return memberMapper.toDto(member);
+    }
+
+    public MemberDto findMemberByUserName(String userName) {
+        var member = memberRepository.findByUserName(userName)
+                .orElseThrow(MemberNotFoundException::new);
         return memberMapper.toDto(member);
     }
 
