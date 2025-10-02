@@ -1,6 +1,6 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 
-import org.linker.plnm.bot.helpers.menus.MenuManager;
+import org.linker.plnm.bot.helpers.builders.MenuBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
@@ -12,7 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 @Service
@@ -34,7 +34,7 @@ public class EditTeamMenuHandler implements UpdateHandler {
         return BotCommand.EDIT_TEAM_MENU;
     }
 
-    @Override /// Returning team edit menu
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         if (update.hasCallbackQuery())
@@ -43,21 +43,27 @@ public class EditTeamMenuHandler implements UpdateHandler {
         return editTeam(message);
     }
 
-    /// Asking for team name to edit
+    /**
+     * Asking for team name to edit
+     */
     private SendMessage askForTeamName(Message message) {
         if (!teamService.anyTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
+
         var session = TeamActionSession.builder()
                 .command(BotCommand.EDIT_TEAM_MENU).build();
+
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAME.format());
     }
 
-    /// Returning team edit menu
+    /**
+     * Returning team edit menu
+     */
     private BotApiMethod<?> editTeam(Message message) {
         String teamName = MessageParser.extractFirstPart(message.getText()).orElse("");
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-        return MenuManager.editTeamMenu(message, teamName);
+        return MenuBuilder.editTeamMenu(message, teamName);
     }
 }

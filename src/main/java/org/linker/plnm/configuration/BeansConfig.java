@@ -1,6 +1,6 @@
 package org.linker.plnm.configuration;
 
-import org.linker.plnm.bot.senders.Bot;
+import org.linker.plnm.bot.Bot;
 import org.linker.plnm.bot.dispatchers.CommandDispatcher;
 import org.linker.plnm.bot.settings.BotSettings;
 import org.springframework.context.annotation.Bean;

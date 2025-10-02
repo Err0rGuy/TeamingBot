@@ -12,14 +12,14 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.linker.plnm.bot.handlers.UpdateHandler;
-import org.linker.plnm.bot.helpers.menus.MenuManager;
-import org.linker.plnm.bot.helpers.validation.Validator;
+import org.linker.plnm.bot.helpers.builders.MenuBuilder;
+import org.linker.plnm.bot.helpers.validation.Validators;
 
 
 @Service
 public class StartHandler implements UpdateHandler {
 
-    private final Validator validation;
+    private final Validators validation;
 
     private final MemberService memberService;
 
@@ -28,7 +28,7 @@ public class StartHandler implements UpdateHandler {
     private final SessionCache sessionCache;
 
     public StartHandler(
-            @Lazy Validator validation,
+            @Lazy Validators validation,
             MemberService memberService,
             TelegramUserBaseMapper telegramUserMapper,
             SessionCache sessionCache) {
@@ -52,8 +52,10 @@ public class StartHandler implements UpdateHandler {
         sessionCache.remove(message);
         User user = message.getFrom();
         MemberDto memberDto = telegramUserMapper.toDto(user);
+
         if (!memberService.memberExists(memberDto.id()))
             memberService.saveMember(memberDto);
-        return (validation.isGroup(message)) ? MenuManager.startMenu(message) : MenuManager.botPVStartMenu(message);
+
+        return (validation.isGroup(message)) ? MenuBuilder.startMenu(message) : MenuBuilder.botPVStartMenu(message);
     }
 }

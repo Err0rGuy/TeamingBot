@@ -13,8 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.DtoBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class RenameTeamHandler implements UpdateHandler {
         return BotCommand.RENAME_TEAM;
     }
 
-    @Override /// Renaming an existing team
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         String teamName;
@@ -54,19 +54,25 @@ public class RenameTeamHandler implements UpdateHandler {
         return renameTeam(message, teamName);
     }
 
-    /// Ask for team new name
+    /**
+     * Ask for team new name
+      */
     private SendMessage askForNewTeamName(Message message, String teamName) {
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+
         var session = TeamActionSession.builder()
                 .command(BotCommand.RENAME_TEAM)
                 .teamNames(List.of(teamName))
                 .build();
+
         sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAME.format());
+        return MessageBuilder.buildMessage(message, BotMessage.ASK_NEW_TEAM_NAME.format());
     }
 
-    /// Renaming team
+    /**
+     * Renaming team
+     */
     private BotApiMethod<?> renameTeam(Message message, String teamName) {
         var newTeam = DtoBuilder.buildTeamDto(message);
         try {

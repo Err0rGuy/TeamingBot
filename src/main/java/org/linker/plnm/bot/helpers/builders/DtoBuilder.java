@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.helpers.dtos;
+package org.linker.plnm.bot.helpers.builders;
 
 import org.linker.plnm.domain.dtos.ChatGroupDto;
 import org.linker.plnm.domain.dtos.MemberDto;
@@ -42,17 +42,4 @@ public class DtoBuilder {
         });
         return teamDtoList;
     }
-
-    public static List<MemberDto> buildMemberDtoList(Message message) {
-        List<MemberDto>  members = new ArrayList<>();
-        String[] userNames = MessageParser.findUsernames(message.getText());
-        Arrays.stream(userNames).forEach(userName -> {
-            var memberDto = MemberDto.builder()
-                    .userName(userName)
-                    .build();
-            members.add(memberDto);
-        });
-        return members;
-    }
-
 }

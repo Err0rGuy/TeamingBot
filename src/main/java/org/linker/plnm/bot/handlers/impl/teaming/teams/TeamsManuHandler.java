@@ -1,6 +1,6 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.menus.MenuManager;
+import org.linker.plnm.bot.helpers.builders.MenuBuilder;
 import org.linker.plnm.enums.BotCommand;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -22,10 +22,13 @@ public class TeamsManuHandler implements UpdateHandler {
         return BotCommand.TEAMS_MENU;
     }
 
-    @Override /// Returning teaming actions menu
+    /**
+     * Returning teaming actions menu
+     */
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         sessionCache.remove(message);
-        return MenuManager.teamsMenu(message);
+        return MenuBuilder.teamsMenu(message);
     }
 }

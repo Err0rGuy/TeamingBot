@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.senders;
+package org.linker.plnm.bot;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import java.io.Serializable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
@@ -29,21 +27,21 @@ public class Bot extends TelegramLongPollingBot {
 
     public Bot(
             BotSettings botSettings,
-            CommandDispatcher detector
+            CommandDispatcher dispatcher
     ){
         super(botSettings.getToken());
         this.botSettings = botSettings;
-        this.detector = detector;
+        this.detector = dispatcher;
     }
 
     public Bot(
             DefaultBotOptions defaultBotOptions,
             BotSettings botSettings,
-            CommandDispatcher detector
+            CommandDispatcher dispatcher
     ) {
         super(defaultBotOptions, botSettings.getToken());
         this.botSettings = botSettings;
-        this.detector = detector;
+        this.detector = dispatcher;
     }
 
     @PostConstruct
@@ -61,22 +59,17 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        Future<?> future = executorService.submit(() -> {
-            BotApiMethod<?> botApiMethod;
-            update.setMessage(extractMessage(update));
+        executorService.submit(() -> {
             try {
-                botApiMethod = detector.dispatch(update);
-                if (botApiMethod != null)
-                    execute(botApiMethod);
+                BotApiMethod<?> response = detector.dispatch(normalizeUpdate(update));
+                if (response != null)
+                    execute(response);
             } catch (TelegramApiException e) {
                 log.error("Failed to execute message!", e);
+            } catch (Exception e) {
+                log.error("Unexpected exception while handling update!", e);
             }
         });
-        try {
-            future.get();
-        }catch (Exception e){
-            log.error("Facing an exception in work flow!", e);
-        }
     }
 
     @Override
@@ -84,15 +77,21 @@ public class Bot extends TelegramLongPollingBot {
         return this.botSettings.getUsername();
     }
 
-    private Message extractMessage(Update update) {
-        Message message;
-        if (update.hasCallbackQuery()) {
-            message = update.getCallbackQuery().getMessage();
-            message.setFrom(update.getCallbackQuery().getFrom());
-            message.setText(update.getCallbackQuery().getData());
-        }
-        else
-            message = update.getMessage();
+    private Update normalizeUpdate(Update update){
+        Message message = update.hasCallbackQuery() ? extractCallBackMessage(update) : extractTextMessage(update);
+        update.setMessage(message);
+        return update;
+    }
+
+    private Message extractCallBackMessage(Update update) {
+        Message message = update.getCallbackQuery().getMessage();
+        message.setFrom(update.getCallbackQuery().getFrom());
+        message.setText(update.getCallbackQuery().getData());
+        return message;
+    }
+
+    private Message extractTextMessage(Update update) {
+        Message message = update.getMessage();
         if (message != null && message.hasText())
             message.setText(message.getText().replace("@" + getBotUsername(), ""));
         return message;

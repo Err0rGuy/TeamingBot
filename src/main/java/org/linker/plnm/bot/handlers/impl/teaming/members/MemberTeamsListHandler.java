@@ -1,5 +1,6 @@
 package org.linker.plnm.bot.handlers.impl.teaming.members;
 
+import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.TelegramUserBaseMapper;
 import org.linker.plnm.enums.BotCommand;
@@ -14,7 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.linker.plnm.bot.handlers.UpdateHandler;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 
 import java.util.List;
 
@@ -41,16 +42,20 @@ public class MemberTeamsListHandler implements UpdateHandler {
         return BotCommand.MY_TEAMS;
     }
 
-    /**
-     * Listing member teams
-     */
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         var memberDto = telegramUserMapper.toDto(message.getFrom());
+        return getMemberTeams(memberDto, message);
+    }
+
+    /**
+     * Listing member teams
+     */
+    private BotApiMethod<?> getMemberTeams(MemberDto memberDto, Message message) {
         List<TeamDto> teams;
         try {
-            teams = teamService.getMemberTeams(memberDto);
+            teams = teamService.getMemberTeams(memberDto, message.getChatId());
         } catch (MemberNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.YOU_DID_NOT_STARTED.format());
         } catch (TeamNotFoundException e) {

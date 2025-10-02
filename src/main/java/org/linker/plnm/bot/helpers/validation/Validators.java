@@ -12,11 +12,11 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component @Slf4j
-public class Validator {
+public class Validators {
 
     private final AbsSender sender;
 
-    public Validator(AbsSender sender) {
+    public Validators(AbsSender sender) {
         this.sender = sender;
     }
 
@@ -32,7 +32,9 @@ public class Validator {
         return  !command.isPvAllowed() && !isGroup(message);
     }
 
-    /// Check that message sender is admin or not
+    /**
+     * Check that message sender is admin or not
+      */
     public boolean isAdmin(@NotNull Message message) throws TelegramApiException {
         GetChatMember getChatMember = new GetChatMember();
         getChatMember.setChatId(message.getChatId());

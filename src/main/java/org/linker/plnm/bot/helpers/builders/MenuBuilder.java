@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.helpers.menus;
+package org.linker.plnm.bot.helpers.builders;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.enums.BotCommand;
@@ -7,9 +7,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
 
-public class MenuManager {
+public class MenuBuilder {
 
     @NotNull
     public static SendMessage startMenu(Message message) {

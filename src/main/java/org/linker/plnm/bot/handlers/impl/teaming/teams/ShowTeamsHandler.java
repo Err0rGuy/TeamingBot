@@ -1,6 +1,6 @@
 package org.linker.plnm.bot.handlers.impl.teaming.teams;
 
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
@@ -35,9 +35,16 @@ public class ShowTeamsHandler implements UpdateHandler {
         return BotCommand.SHOW_TEAMS;
     }
 
-    @Override /// Listing all existing teams with their members
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
+        return  getAllTeamsInfo(message);
+    }
+
+    /**
+     * Listing all existing teams with their members
+     */
+    private BotApiMethod<?> getAllTeamsInfo(Message message) {
         List<TeamDto> teams;
         try {
             teams = teamService.getAllGroupTeams(message.getChatId());
@@ -48,5 +55,6 @@ public class ShowTeamsHandler implements UpdateHandler {
         context.setVariable("teams", teams);
         String text = templateEngine.process("show_teams", context);
         return MessageBuilder.buildMessage(message, text, "HTML");
+
     }
 }

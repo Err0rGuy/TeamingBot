@@ -15,9 +15,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class AddMemberHandler implements UpdateHandler {
         return BotCommand.ADD_MEMBER;
     }
 
-    @Override /// Adding new members to a team
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         String teamName;
@@ -61,26 +60,35 @@ public class AddMemberHandler implements UpdateHandler {
         return addMembers(message, teamName);
     }
 
-    /// Asking for members usernames
+    /**
+     * Asking for members usernames
+     */
     private SendMessage askForUsernames(Message message, String teamName) {
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+
         var session = TeamActionSession.builder()
                 .command(BotCommand.ADD_MEMBER)
                 .teamNames(List.of(teamName))
                 .build();
+
         sessionCache.add(message, session);
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format(), "HTML");
     }
 
-    /// Parsing and gathering usernames from message text
+    /**
+     * Parsing and gathering usernames from message text
+     */
     private BotApiMethod<?> addMembers(Message message, String teamName) {
         var userNames = MessageParser.findUsernames(message.getText());
+
         if (userNames.length == 0)
             return MessageBuilder.buildMessage(message, BotMessage.NO_USERNAME_GIVEN.format());
+
         List<String> responses = Arrays.stream(userNames)
                 .map(user -> processAddMember(user, teamName, message.getChatId()))
                 .toList();
+
         return MessageBuilder.buildMessage(message, String.join("\n\n", responses));
     }
 

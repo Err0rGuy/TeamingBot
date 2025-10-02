@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TeamService {
@@ -83,10 +84,11 @@ public class TeamService {
         return teamMapper.toDto(teamOpt);
     }
 
-    public List<TeamDto> getMemberTeams(MemberDto memberDto) throws TeamNotFoundException, MemberNotFoundException {
+    public List<TeamDto> getMemberTeams(MemberDto memberDto, Long chatId) throws TeamNotFoundException, MemberNotFoundException {
         var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
-        var teams = member.getTeams().stream().toList();
+        var teams = member.getTeams().stream()
+                .filter(team -> Objects.equals(team.getChatGroup().getChatId(), chatId)).toList();
         if (teams.isEmpty())
             throw new TeamNotFoundException();
         return teamMapper.toDtoList(teams);

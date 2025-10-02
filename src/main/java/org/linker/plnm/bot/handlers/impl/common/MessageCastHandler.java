@@ -1,7 +1,7 @@
 package org.linker.plnm.bot.handlers.impl.common;
 
 import lombok.extern.slf4j.Slf4j;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.enums.BotMessage;
@@ -46,12 +46,13 @@ public class MessageCastHandler {
 
         for (String teamName : MessageParser.findTeamNames(message.getText())) {
             List<MemberDto> members = resolveMembers(teamName, chatId);
+            if (members.isEmpty())
+                continue;
             List<BotApiMethodMessage> messages = buildMessages(members, message, sentIds);
             sendMessage(messages);
             responseText.add(responseTextForTeam(teamName));
         }
-
-        return MessageBuilder.buildMessage(message, String.join("\n", responseText));
+        return MessageBuilder.buildMessage(message, String.join("\n\n", responseText));
     }
 
     /**
@@ -70,11 +71,14 @@ public class MessageCastHandler {
     /**
      * Return members if is global call or team call
      */
-    private List<MemberDto> resolveMembers(String teamName, long chatId) {
-        if ("global".equalsIgnoreCase(teamName)) {
+    private List<MemberDto> resolveMembers(String teamName, Long chatId) {
+        if ("global".equalsIgnoreCase(teamName))
             return memberService.findAllMembers();
+        try {
+            return teamService.findTeam(teamName, chatId).members();
+        }catch (Exception e){
+            return Collections.emptyList();
         }
-        return teamService.findTeam(teamName, chatId).members();
     }
 
     /**
@@ -84,13 +88,11 @@ public class MessageCastHandler {
         List<BotApiMethodMessage> result = new ArrayList<>();
         boolean isSuperGroup = originalMessage.getChat().isSuperGroupChat();
         for (MemberDto member : members) {
-            if (sentIds.add(member.id())) {
-                if (isSuperGroup) {
+            if (sentIds.add(member.id()))
+                if (isSuperGroup)
                     result.add(buildSuperGroupMessage(originalMessage, member.id()));
-                } else {
+                 else
                     result.addAll(buildNormalGroupMessages(originalMessage,  member.id()));
-                }
-            }
         }
         return result;
     }
@@ -126,10 +128,9 @@ public class MessageCastHandler {
      */
     private List<BotApiMethodMessage> buildNormalGroupMessages(Message message, Long memberId) {
         String text = BotMessage.NORMAL_GROUP_BROADCAST_MESSAGE.format(message.getChat().getTitle());
-
         return List.of(
                 MessageBuilder.buildMessage(memberId, text, "Markdown"),
-                MessageBuilder.buildForwardMessage(message)
+                MessageBuilder.buildForwardMessage(memberId, message)
         );
     }
 }

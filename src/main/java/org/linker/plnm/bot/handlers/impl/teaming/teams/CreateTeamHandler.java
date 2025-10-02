@@ -12,8 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.dtos.DtoBuilder;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.DtoBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 import java.util.ArrayList;

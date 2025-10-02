@@ -16,7 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
-import org.linker.plnm.bot.helpers.messages.MessageBuilder;
+import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 import java.util.Arrays;
@@ -44,7 +44,7 @@ public class RemoveMemberHandler implements UpdateHandler {
         return BotCommand.REMOVE_MEMBER;
     }
 
-    @Override /// Removing members from specific team
+    @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         String teamName;
@@ -60,7 +60,9 @@ public class RemoveMemberHandler implements UpdateHandler {
         return removeMembers(message, teamName);
     }
 
-    /// Asking for members usernames
+    /**
+     * Asking for members usernames
+     */
     private SendMessage askForUsernames(Message message, String teamName) {
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
@@ -72,7 +74,9 @@ public class RemoveMemberHandler implements UpdateHandler {
         return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format(), "HTML");
     }
 
-    /// Parsing and gathering usernames from message data
+    /**
+     * Removing members from specific team
+     */
     private BotApiMethod<?> removeMembers(Message message, String teamName) {
         var userNames = MessageParser.findUsernames(message.getText());
         if (userNames.length == 0)
@@ -83,7 +87,9 @@ public class RemoveMemberHandler implements UpdateHandler {
         return MessageBuilder.buildMessage(message, String.join("\n\n", responses));
     }
 
-    /// Removing member from team
+    /**
+     * Removing member from team
+     */
     private String processRemoveMember(String userName, String teamName, Long chatId) {
         try {
             var memberDto = memberService.findMember(userName);
