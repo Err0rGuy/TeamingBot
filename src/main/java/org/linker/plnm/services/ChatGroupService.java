@@ -1,7 +1,7 @@
 package org.linker.plnm.services;
 
 import org.linker.plnm.domain.dtos.ChatGroupDto;
-import org.linker.plnm.domain.mappers.ChatGroupBaseMapper;
+import org.linker.plnm.domain.mappers.inherited.ChatGroupMapper;
 import org.linker.plnm.exceptions.notfound.ChatGroupNotFoundException;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.springframework.stereotype.Service;
@@ -11,11 +11,11 @@ public class ChatGroupService {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private final ChatGroupBaseMapper chatGroupMapper;
+    private final ChatGroupMapper chatGroupMapper;
 
     public ChatGroupService(
             ChatGroupRepository chatGroupRepository,
-            ChatGroupBaseMapper chatGroupMapper) {
+            ChatGroupMapper chatGroupMapper) {
         this.chatGroupRepository = chatGroupRepository;
         this.chatGroupMapper = chatGroupMapper;
     }

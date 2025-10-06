@@ -5,8 +5,8 @@ import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.entities.ChatGroup;
 import org.linker.plnm.domain.entities.Member;
 import org.linker.plnm.domain.entities.Team;
-import org.linker.plnm.domain.mappers.ChatGroupBaseMapper;
-import org.linker.plnm.domain.mappers.TeamBaseMapper;
+import org.linker.plnm.domain.mappers.inherited.ChatGroupMapper;
+import org.linker.plnm.domain.mappers.inherited.TeamMapper;
 import org.linker.plnm.exceptions.duplication.DuplicateTeamException;
 import org.linker.plnm.exceptions.duplication.DuplicateTeamMemberException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
@@ -30,16 +30,16 @@ public class TeamService {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private final ChatGroupBaseMapper chatGroupMapper;
+    private final ChatGroupMapper chatGroupMapper;
 
-    private final TeamBaseMapper teamMapper;
+    private final TeamMapper teamMapper;
 
     public TeamService(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
-            ChatGroupBaseMapper chatGroupMapper,
-            TeamBaseMapper teamMapper
+            ChatGroupMapper chatGroupMapper,
+            TeamMapper teamMapper
     ) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;

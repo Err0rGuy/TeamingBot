@@ -8,19 +8,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Builder @Data
-public class TeamActionSession implements OperationSession {
+public class OperationSessionImpl implements OperationSession {
 
     private BotCommand command;
+
+    private int step;
 
     @Builder.Default
     private List<String> teamNames = new ArrayList<>();
 
     @Builder.Default
     private List<String> arguments = new  ArrayList<>();
-
-    private final int numberOfSteps;
-
-    private int currentStep;
 
     @Override
     public List<String> getTargets() {
@@ -30,5 +28,15 @@ public class TeamActionSession implements OperationSession {
     @Override
     public void setTargets(List<String> targets) {
         this.teamNames = targets;
+    }
+
+    @Override
+    public int getStep() {
+        return step;
+    }
+
+    @Override
+    public void incrementStep() {
+        step++;
     }
 }

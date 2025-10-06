@@ -63,7 +63,7 @@ public class MenuBuilder {
     }
 
     @NotNull
-    public static EditMessageText createTaskMenu(Message message) {
+    public static EditMessageText taskCreationMenu(Message message) {
         var createTeamTaskBtn = KeyboardBuilder.buildButton("⬧ Team Task", BotCommand.CREATE_TEAM_TASK.str());
         var createMemberTaskBtn = KeyboardBuilder.buildButton("⬧ Member Task", BotCommand.CREATE_MEMBER_TASK.str());
         var backBtn = KeyboardBuilder.buildButton("⟵ Back", BotCommand.TASKS_MENU_BACKWARD.str());

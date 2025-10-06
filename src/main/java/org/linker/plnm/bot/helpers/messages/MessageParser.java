@@ -35,12 +35,12 @@ public class MessageParser {
     }
 
     @NotNull
-    public static String[] findTeamNames(String text) {
+    public static List<String> findTeamNames(String text) {
         var matcher = TEAM_CALL_PATTERN.matcher(text);
         List<String> teamNames = new ArrayList<>();
         while (matcher.find())
             teamNames.add(matcher.group(1).trim());
-        return teamNames.toArray(new String[0]);
+        return teamNames;
     }
 
     @NotNull

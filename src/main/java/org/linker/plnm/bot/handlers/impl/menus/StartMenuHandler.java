@@ -1,8 +1,8 @@
-package org.linker.plnm.bot.handlers.impl.common;
+package org.linker.plnm.bot.handlers.impl.menus;
 
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.domain.dtos.MemberDto;
-import org.linker.plnm.domain.mappers.TelegramUserBaseMapper;
+import org.linker.plnm.domain.mappers.inherited.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.services.MemberService;
 import org.springframework.context.annotation.Lazy;
@@ -17,20 +17,20 @@ import org.linker.plnm.bot.helpers.validation.Validators;
 
 
 @Service
-public class StartHandler implements UpdateHandler {
+public class StartMenuHandler implements UpdateHandler {
 
     private final Validators validation;
 
     private final MemberService memberService;
 
-    private final TelegramUserBaseMapper telegramUserMapper;
+    private final TelegramUserMapper telegramUserMapper;
 
     private final SessionCache sessionCache;
 
-    public StartHandler(
+    public StartMenuHandler(
             @Lazy Validators validation,
             MemberService memberService,
-            TelegramUserBaseMapper telegramUserMapper,
+            TelegramUserMapper telegramUserMapper,
             SessionCache sessionCache) {
         this.memberService = memberService;
         this.validation = validation;

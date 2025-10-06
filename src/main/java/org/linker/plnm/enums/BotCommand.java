@@ -21,6 +21,8 @@ public enum BotCommand {
     EDIT_TEAM_MENU("/edit_team", List.of(CommandType.PRIVILEGED)),
     TEAMS_MENU("/teams_menu", List.of(CommandType.UNPRIVILEGED)),
     TEAMS_MENU_BACKWARD("/teams_menu_backward", List.of(CommandType.UNPRIVILEGED)),
+    CREATE_TASK("/create_task", List.of(CommandType.PRIVILEGED)),
+    REMOVE_TASK("/remove_task", List.of(CommandType.PRIVILEGED)),
     CREATE_TASK_MENU("menu:createTask", List.of(CommandType.PRIVILEGED)),
     REMOVE_TASK_MENU("menu:removeTask", List.of(CommandType.PRIVILEGED)),
     CREATE_MEMBER_TASK("/create_member_task", List.of(CommandType.PRIVILEGED)),

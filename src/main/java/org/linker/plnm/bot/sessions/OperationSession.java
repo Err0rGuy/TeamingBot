@@ -8,8 +8,6 @@ public interface OperationSession {
 
     BotCommand getCommand();
 
-    int getCurrentStep();
-
     List<String> getTargets();
 
     void setTargets(List<String> targets);
@@ -18,11 +16,9 @@ public interface OperationSession {
 
     void setCommand(BotCommand command);
 
-    void setCurrentStep(int step);
-
-    default void increaseStep() {
-        setCurrentStep(getCurrentStep() + 1);
-    }
-
     void setArguments(List<String> arguments);
+
+    int getStep();
+
+    void incrementStep();
 }

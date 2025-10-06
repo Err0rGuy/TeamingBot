@@ -61,7 +61,10 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         executorService.submit(() -> {
             try {
-                BotApiMethod<?> response = detector.dispatch(normalizeUpdate(update));
+                Update normalizedUpdate = normalizeUpdate(update);
+                if (update.getMessage() == null)
+                    return;
+                BotApiMethod<?> response = detector.dispatch(normalizedUpdate);
                 if (response != null)
                     execute(response);
             } catch (TelegramApiException e) {

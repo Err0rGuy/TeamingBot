@@ -50,7 +50,7 @@ public class MessageCastHandler {
                 continue;
             List<BotApiMethodMessage> messages = buildMessages(members, message, sentIds);
             sendMessage(messages);
-            responseText.add(responseTextForTeam(teamName));
+            responseText.add(responseText(teamName));
         }
         return MessageBuilder.buildMessage(message, String.join("\n\n", responseText));
     }
@@ -100,7 +100,7 @@ public class MessageCastHandler {
     /**
      * Response text
      */
-    private String responseTextForTeam(String teamName) {
+    private String responseText(String teamName) {
         if ("global".equalsIgnoreCase(teamName)) {
             return BotMessage.MESSAGE_SENT_TO_GLOBAL.format();
         }

@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.handlers.impl.teaming.members;
+package org.linker.plnm.bot.handlers.impl.members;
 
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
@@ -17,7 +17,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
 
 import java.util.Arrays;
 import java.util.List;
@@ -66,7 +66,7 @@ public class RemoveMemberHandler implements UpdateHandler {
     private SendMessage askForUsernames(Message message, String teamName) {
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-        var session = TeamActionSession.builder()
+        var session = OperationSessionImpl.builder()
                 .command(BotCommand.REMOVE_MEMBER)
                 .teamNames(List.of(teamName))
                 .build();

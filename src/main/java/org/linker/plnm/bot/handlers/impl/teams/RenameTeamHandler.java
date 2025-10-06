@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.handlers.impl.teaming.teams;
+package org.linker.plnm.bot.handlers.impl.teams;
 
 import org.linker.plnm.bot.helpers.messages.MessageParser;
 import org.linker.plnm.enums.BotCommand;
@@ -15,7 +15,7 @@ import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.DtoBuilder;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
 import java.util.List;
 
 
@@ -61,7 +61,7 @@ public class RenameTeamHandler implements UpdateHandler {
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
 
-        var session = TeamActionSession.builder()
+        var session = OperationSessionImpl.builder()
                 .command(BotCommand.RENAME_TEAM)
                 .teamNames(List.of(teamName))
                 .build();

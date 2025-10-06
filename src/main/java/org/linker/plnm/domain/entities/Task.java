@@ -19,7 +19,8 @@ public class Task {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @ManyToMany(fetch =  FetchType.EAGER) @Builder.Default
+    @ManyToMany(fetch =  FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default
     @JoinTable(
             name = "team_tasks",
             joinColumns = @JoinColumn(name = "task_id"),
@@ -27,7 +28,8 @@ public class Task {
     )
     private Set<Team> teams = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER) @Builder.Default
+    @ManyToMany(fetch = FetchType.EAGER)
+    @Builder.Default
     @JoinTable(
             name = "member_tasks",
             joinColumns = @JoinColumn(name = "task_id"),

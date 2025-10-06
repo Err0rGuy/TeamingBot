@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.handlers.impl.teaming.teams;
+package org.linker.plnm.bot.handlers.impl.menus;
 
 import org.linker.plnm.bot.helpers.builders.MenuBuilder;
 import org.linker.plnm.bot.helpers.messages.MessageParser;
@@ -13,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.TeamActionSession;
+import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
 
 @Service
 public class EditTeamMenuHandler implements UpdateHandler {
@@ -50,7 +50,7 @@ public class EditTeamMenuHandler implements UpdateHandler {
         if (!teamService.anyTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
 
-        var session = TeamActionSession.builder()
+        var session = OperationSessionImpl.builder()
                 .command(BotCommand.EDIT_TEAM_MENU).build();
 
         sessionCache.add(message, session);

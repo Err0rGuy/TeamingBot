@@ -2,7 +2,7 @@ package org.linker.plnm.services;
 
 
 import org.linker.plnm.domain.dtos.MemberDto;
-import org.linker.plnm.domain.mappers.MemberBaseMapper;
+import org.linker.plnm.domain.mappers.inherited.MemberMapper;
 import org.linker.plnm.exceptions.duplication.DuplicateMemberException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.repositories.MemberRepository;
@@ -16,11 +16,11 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
 
-    private final MemberBaseMapper memberMapper;
+    private final MemberMapper memberMapper;
 
     public MemberService(
             MemberRepository memberRepository,
-            MemberBaseMapper memberMapper
+            MemberMapper memberMapper
     ) {
         this.memberRepository = memberRepository;
         this.memberMapper = memberMapper;
