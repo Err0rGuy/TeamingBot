@@ -1,4 +1,4 @@
-package org.linker.plnm.bot.helpers.messages;
+package org.linker.plnm.bot.helpers.parsers;
 
 import org.jetbrains.annotations.NotNull;
 import org.linker.plnm.domain.entities.Task;

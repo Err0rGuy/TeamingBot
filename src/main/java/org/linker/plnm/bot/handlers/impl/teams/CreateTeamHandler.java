@@ -1,8 +1,9 @@
 package org.linker.plnm.bot.handlers.impl.teams;
-import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.bot.helpers.parsers.MessageParser;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
+import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.duplication.DuplicateTeamException;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.DtoBuilder;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +24,11 @@ public class CreateTeamHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
-    private final SessionCache sessionCache;
+    private final SessionCache<TeamDto> sessionCache;
 
-    public CreateTeamHandler(TeamService teamService, SessionCache sessionCache) {
+    public CreateTeamHandler(
+            TeamService teamService,
+            SessionCache<TeamDto> sessionCache) {
         this.teamService = teamService;
         this.sessionCache = sessionCache;
     }
@@ -38,33 +41,43 @@ public class CreateTeamHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
+
         if (update.hasCallbackQuery())
-            return askForTeamNames(message);
+            return promptForTeamNames(message);
+
         sessionCache.remove(message);
-        return createTeams(message);
+        return handleCreateTeams(message);
     }
 
     /**
      * Asking for team names
      */
-    private SendMessage askForTeamNames(Message message) {
-        var session = OperationSessionImpl.builder().command(BotCommand.CREATE_TEAM).build();
+    private SendMessage promptForTeamNames(Message message) {
+        var session = TeamActionSession.builder().command(BotCommand.CREATE_TEAM).build();
         sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), "HTML");
+
+        return MessageBuilder.buildMessage(
+                message,
+                BotMessage.ASK_FOR_TEAM_NAMES.format(),
+                MessageParseMode.HTML
+        );
     }
 
     /**
      * Creating new teams
      */
-    private BotApiMethod<?> createTeams(Message message) {
+    private BotApiMethod<?> handleCreateTeams(Message message) {
         List<String> responseTxt = new ArrayList<>();
         var teams = resolveTeams(message);
 
         if (teams.isEmpty())
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
 
-        teams.forEach(teamDto -> responseTxt.add(processTeamCreation(teamDto)));
-        return MessageBuilder.buildMessage(message, String.join("\n\n", responseTxt));
+        teams.forEach(teamDto -> responseTxt.add(tryCreateTeam(teamDto)));
+        return MessageBuilder.buildMessage(
+                message,
+                String.join("\n\n", responseTxt)
+        );
     }
 
     /**
@@ -78,10 +91,11 @@ public class CreateTeamHandler implements UpdateHandler {
     /**
      * Processing team creation
      */
-    private String processTeamCreation(TeamDto teamDto) {
+    private String tryCreateTeam(TeamDto teamDto) {
         try {
             teamService.saveTeam(teamDto);
             return BotMessage.TEAM_CREATED.format(teamDto.name());
+
         } catch (DuplicateTeamException e) {
             return BotMessage.TEAM_ALREADY_EXISTS.format(teamDto.name());
         }

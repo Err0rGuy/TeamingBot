@@ -4,13 +4,13 @@ import org.linker.plnm.enums.BotCommand;
 
 import java.util.List;
 
-public interface OperationSession {
+public interface OperationSession<T> {
 
     BotCommand getCommand();
 
-    List<String> getTargets();
+    List<T> getTargets();
 
-    void setTargets(List<String> targets);
+    void setTargets(List<T> targets);
 
     List<String> getArguments();
 

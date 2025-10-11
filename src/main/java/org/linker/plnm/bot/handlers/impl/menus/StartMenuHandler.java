@@ -13,29 +13,25 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.builders.MenuBuilder;
-import org.linker.plnm.bot.helpers.validation.Validators;
+import org.linker.plnm.bot.helpers.validation.MessageValidators;
 
 
 @Service
 public class StartMenuHandler implements UpdateHandler {
 
-    private final Validators validation;
+    private final MessageValidators validation;
 
     private final MemberService memberService;
 
     private final TelegramUserMapper telegramUserMapper;
 
-    private final SessionCache sessionCache;
-
     public StartMenuHandler(
-            @Lazy Validators validation,
+            @Lazy MessageValidators validation,
             MemberService memberService,
-            TelegramUserMapper telegramUserMapper,
-            SessionCache sessionCache) {
+            TelegramUserMapper telegramUserMapper) {
         this.memberService = memberService;
         this.validation = validation;
         this.telegramUserMapper = telegramUserMapper;
-        this.sessionCache = sessionCache;
     }
 
     @Override
@@ -49,13 +45,14 @@ public class StartMenuHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        sessionCache.remove(message);
         User user = message.getFrom();
         MemberDto memberDto = telegramUserMapper.toDto(user);
 
         if (!memberService.memberExists(memberDto.id()))
             memberService.saveMember(memberDto);
 
-        return (validation.isGroup(message)) ? MenuBuilder.startMenu(message) : MenuBuilder.botPVStartMenu(message);
+        return (validation.isGroup(message))
+                ? MenuBuilder.startMenu(message)
+                : MenuBuilder.botPVStartMenu(message);
     }
 }

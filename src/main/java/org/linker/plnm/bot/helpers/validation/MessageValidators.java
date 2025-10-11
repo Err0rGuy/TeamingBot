@@ -12,11 +12,11 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component @Slf4j
-public class Validators {
+public class MessageValidators {
 
     private final AbsSender sender;
 
-    public Validators(AbsSender sender) {
+    public MessageValidators(AbsSender sender) {
         this.sender = sender;
     }
 
@@ -29,7 +29,7 @@ public class Validators {
     }
 
     public boolean badCommand(BotCommand command, Message message) {
-        return  !command.isPvAllowed() && !isGroup(message);
+        return !command.isPvAllowed() && !isGroup(message);
     }
 
     /**

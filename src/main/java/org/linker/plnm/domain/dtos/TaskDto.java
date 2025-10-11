@@ -11,6 +11,5 @@ public record TaskDto(
         String name,
         String description,
         List<Long> memberIds,
-        List<Long> teamIds,
         Task.TaskStatus status
 ) {}

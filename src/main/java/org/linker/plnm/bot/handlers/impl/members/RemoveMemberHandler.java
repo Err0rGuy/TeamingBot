@@ -1,8 +1,10 @@
 package org.linker.plnm.bot.handlers.impl.members;
 
-import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.bot.helpers.parsers.MessageParser;
+import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
+import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.duplication.DuplicateTeamMemberException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamMemberNotFoundException;
@@ -17,22 +19,22 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 public class RemoveMemberHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
-    private final SessionCache sessionCache;
+    private final SessionCache<TeamDto> sessionCache;
     private final MemberService memberService;
 
     public RemoveMemberHandler(
             TeamService teamService,
-            SessionCache sessionCache,
+            SessionCache<TeamDto> sessionCache,
             MemberService memberService) {
         this.teamService = teamService;
         this.sessionCache = sessionCache;
@@ -47,58 +49,82 @@ public class RemoveMemberHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        String teamName;
+
         if (update.hasCallbackQuery()){
-            teamName = MessageParser.extractSecondPart(message.getText()).orElse("");
-            return askForUsernames(message, teamName);
+            String teamName = MessageParser.extractSecondPart(message.getText()).orElse("");
+            return promptForUsernames(message, teamName);
         }
-        var fetchedSession = sessionCache.fetch(message);
-        if (fetchedSession.isEmpty())
-            return null;
-        teamName = fetchedSession.get().getTargets().getFirst();
+
+        var sessionOpt = sessionCache.fetch(message);
+        if (sessionOpt.isEmpty()) return null;
+
+        TeamDto team = sessionOpt.get().getTargets().getFirst();
         sessionCache.remove(message);
-        return removeMembers(message, teamName);
+
+        return handleRemoveMembers(message, team);
     }
 
     /**
      * Asking for members usernames
      */
-    private SendMessage askForUsernames(Message message, String teamName) {
+    private SendMessage promptForUsernames(Message message, String teamName) {
         if (!teamService.teamExists(teamName, message.getChatId()))
-            return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-        var session = OperationSessionImpl.builder()
+            return MessageBuilder.buildMessage(
+                    message,
+                    BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)
+            );
+
+        var team = teamService.findTeam(teamName, message.getChatId());
+        var session = TeamActionSession.builder()
                 .command(BotCommand.REMOVE_MEMBER)
-                .teamNames(List.of(teamName))
+                .teams(List.of(team))
                 .build();
+
         sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_USERNAMES.format(), "HTML");
+
+        return MessageBuilder.buildMessage(
+                message,
+                BotMessage.ASK_FOR_USERNAMES.format(),
+                MessageParseMode.HTML
+        );
     }
 
     /**
      * Removing members from specific team
      */
-    private BotApiMethod<?> removeMembers(Message message, String teamName) {
-        var userNames = MessageParser.findUsernames(message.getText());
-        if (userNames.length == 0)
+    private BotApiMethod<?> handleRemoveMembers(Message message, TeamDto teamDto) {
+        var usernames = MessageParser.findUsernames(message.getText());
+
+        if (usernames.length == 0) {
             return MessageBuilder.buildMessage(message, BotMessage.NO_USERNAME_GIVEN.format());
-        List<String> responses = Arrays.stream(userNames)
-                .map(user -> processRemoveMember(user, teamName, message.getChatId()))
-                .toList();
-        return MessageBuilder.buildMessage(message, String.join("\n\n", responses));
+        }
+        List<String> results =
+                Stream.of(usernames)
+                        .map(user -> tryRemoveMember(user, teamDto))
+                        .toList();
+        return MessageBuilder.buildMessage(
+                message,
+                String.join("\n\n", results)
+        );
     }
 
     /**
      * Removing member from team
      */
-    private String processRemoveMember(String userName, String teamName, Long chatId) {
+    private String tryRemoveMember(String userName, TeamDto teamDto) {
         try {
             var memberDto = memberService.findMember(userName);
-            teamService.removeTeamMember(chatId, teamName, memberDto.id());
+            teamService.removeTeamMember(
+                    teamDto.chatGroup().chatId(), teamDto.name(), memberDto.id()
+            );
             return BotMessage.MEMBER_REMOVED_FROM_TEAM.format(memberDto.displayName());
+
         } catch (TeamNotFoundException e) {
-            return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName);
+            return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name());
+
         } catch (DuplicateTeamMemberException e) {
             return BotMessage.MEMBER_ALREADY_ADDED_TO_TEAM.format('@' + userName);
+
         } catch (TeamMemberNotFoundException | MemberNotFoundException e) {
             return BotMessage.MEMBER_HAS_NOT_BEEN_ADDED_TO_TEAM.format('@' + userName);
         }

@@ -5,6 +5,7 @@ import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.inherited.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
+import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
@@ -46,24 +47,29 @@ public class MemberTeamsListHandler implements UpdateHandler {
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         var memberDto = telegramUserMapper.toDto(message.getFrom());
-        return getMemberTeams(memberDto, message);
+        return createMemberTeamsResponse(memberDto, message);
     }
 
     /**
      * Listing member teams
      */
-    private BotApiMethod<?> getMemberTeams(MemberDto memberDto, Message message) {
+    private BotApiMethod<?> createMemberTeamsResponse(MemberDto member, Message message) {
         List<TeamDto> teams;
+
         try {
-            teams = teamService.getMemberTeams(memberDto, message.getChatId());
+            teams = teamService.getMemberTeams(member, message.getChatId());
+
         } catch (MemberNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.YOU_DID_NOT_STARTED.format());
+
         } catch (TeamNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
         }
-        Context context = new  Context();
+
+        var context = new Context();
         context.setVariable("teams", teams);
-        String text = templateEngine.process("my_teams", context);
-        return MessageBuilder.buildMessage(message, text, "HTML");
+
+        String html = templateEngine.process("my_teams", context);
+        return MessageBuilder.buildMessage(message, html, MessageParseMode.HTML);
     }
 }

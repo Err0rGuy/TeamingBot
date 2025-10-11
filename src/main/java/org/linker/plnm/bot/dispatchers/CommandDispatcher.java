@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.linker.plnm.bot.handlers.impl.common.MessageCastHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.bot.helpers.parsers.MessageParser;
 import org.linker.plnm.bot.sessions.OperationSession;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
@@ -15,10 +15,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
-import org.linker.plnm.bot.helpers.validation.Validators;
+import org.linker.plnm.bot.helpers.validation.MessageValidators;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,11 +26,9 @@ import java.util.stream.Collectors;
 @Service
 public class CommandDispatcher {
 
-    private final List<UpdateHandler> handlers;
+    private final SessionCache<?> sessionCache;
 
-    private final SessionCache sessionCache;
-
-    private final ObjectProvider<Validators> validators;
+    private final ObjectProvider<MessageValidators> validators;
 
     private final Map<BotCommand, UpdateHandler> handlerMap;
 
@@ -39,9 +36,10 @@ public class CommandDispatcher {
 
     public CommandDispatcher(
             List<UpdateHandler> handlers,
-            SessionCache sessionCache, ObjectProvider<Validators> validators,
+            SessionCache<?> sessionCache,
+            ObjectProvider<MessageValidators> validators,
             ObjectProvider<MessageCastHandler> messageCastHandlerProvider) {
-        this.handlers = handlers;
+
         this.sessionCache = sessionCache;
         this.validators = validators;
         this.messageCastHandlerProvider = messageCastHandlerProvider;
@@ -71,7 +69,7 @@ public class CommandDispatcher {
         BotCommand command = extractCommand(message);
 
         if (command != null) {
-            BotApiMethod<?> validationMessage = resolveValidations(command, message);
+            BotApiMethod<?> validationMessage = doValidations(command, message);
             if (validationMessage != null)
                 return validationMessage;
             response = dispatchCommand(command, update);
@@ -85,7 +83,7 @@ public class CommandDispatcher {
     /**
      * Controlling if command is valid and can be executed
      */
-    private SendMessage resolveValidations(BotCommand command, Message message) {
+    private SendMessage doValidations(BotCommand command, Message message) {
         var validator =  validators.getObject();
         try {
             if (validator.illegalCommand(command, message))
@@ -104,8 +102,12 @@ public class CommandDispatcher {
      * Dispatching command message to handlers
      */
     private BotApiMethod<?> dispatchCommand(BotCommand command, Update update) {
-        var handler = handlerMap.get(command);
-        return handler != null ? handler.handle(update) : null;
+        try {
+            var handler = handlerMap.get(command);
+            return (handler != null) ? handler.handle(update) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

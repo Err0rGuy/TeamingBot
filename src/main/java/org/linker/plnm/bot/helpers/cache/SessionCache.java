@@ -10,11 +10,11 @@ import org.linker.plnm.bot.sessions.OperationSession;
 import java.util.Optional;
 
 @Component
-public class SessionCache {
+public class SessionCache<T> {
 
-    private final CacheUtilities<OperationSession> cacheUtilities;
+    private final CacheUtilities<OperationSession<T>> cacheUtilities;
 
-    public SessionCache(CacheUtilities<OperationSession> cacheUtilities) {
+    public SessionCache(CacheUtilities<OperationSession<T>> cacheUtilities) {
         this.cacheUtilities = cacheUtilities;
     }
 
@@ -24,7 +24,7 @@ public class SessionCache {
     }
 
     /// Caching future operations with team name
-    public void add(Message message, OperationSession session) {
+    public void add(Message message, OperationSession<T> session) {
         String key = getCacheKey(message.getChatId(), message.getFrom().getId());
         cacheUtilities.put(key, session);
     }
@@ -34,7 +34,7 @@ public class SessionCache {
         return cacheUtilities.exists(key);
     }
 
-    public Optional<OperationSession> fetch(Message message) {
+    public Optional<OperationSession<T>> fetch(Message message) {
         String key = getCacheKey(message.getChatId(), message.getFrom().getId());
         return Optional.ofNullable(cacheUtilities.get(key));
     }

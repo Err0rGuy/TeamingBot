@@ -1,7 +1,8 @@
 package org.linker.plnm.bot.handlers.impl.menus;
 
 import org.linker.plnm.bot.helpers.builders.MenuBuilder;
-import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.bot.helpers.parsers.MessageParser;
+import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.services.TeamService;
@@ -13,17 +14,17 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.sessions.impl.OperationSessionImpl;
+import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 
 @Service
 public class EditTeamMenuHandler implements UpdateHandler {
 
-    private final SessionCache sessionCache;
+    private final SessionCache<TeamDto> sessionCache;
 
     private final TeamService teamService;
 
     public EditTeamMenuHandler(
-            SessionCache sessionCache,
+            SessionCache<TeamDto> sessionCache,
             TeamService teamService) {
         this.sessionCache = sessionCache;
         this.teamService = teamService;
@@ -37,8 +38,10 @@ public class EditTeamMenuHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
+
         if (update.hasCallbackQuery())
             return askForTeamName(message);
+
         sessionCache.remove(message);
         return editTeam(message);
     }
@@ -50,7 +53,7 @@ public class EditTeamMenuHandler implements UpdateHandler {
         if (!teamService.anyTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
 
-        var session = OperationSessionImpl.builder()
+        var session = TeamActionSession.builder()
                 .command(BotCommand.EDIT_TEAM_MENU).build();
 
         sessionCache.add(message, session);
@@ -62,8 +65,10 @@ public class EditTeamMenuHandler implements UpdateHandler {
      */
     private BotApiMethod<?> editTeam(Message message) {
         String teamName = MessageParser.extractFirstPart(message.getText()).orElse("");
+
         if (!teamService.teamExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
+
         return MenuBuilder.editTeamMenu(message, teamName);
     }
 }

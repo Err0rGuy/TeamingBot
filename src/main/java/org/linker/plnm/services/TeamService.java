@@ -18,6 +18,7 @@ import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -84,6 +85,15 @@ public class TeamService {
         return teamMapper.toDto(teamOpt);
     }
 
+    public List<TeamDto> findAllTeams(List<String> teamNames, Long chatId) {
+        var teams = new ArrayList<Team>();
+        for (String teamName : teamNames) {
+            var team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId);
+            team.ifPresent(teams::add);
+        }
+        return teamMapper.toDtoList(teams);
+    }
+
     public List<TeamDto> getMemberTeams(MemberDto memberDto, Long chatId) throws TeamNotFoundException, MemberNotFoundException {
         var member = memberRepository.findById(memberDto.id())
                 .orElseThrow(MemberNotFoundException::new);
@@ -96,8 +106,10 @@ public class TeamService {
 
     public List<TeamDto> getAllGroupTeams(Long chatId) {
         var teams = teamRepository.findAllByChatGroupChatId(chatId);
+
         if (teams.isEmpty())
             throw new TeamNotFoundException();
+
         return teamMapper.toDtoList(teams);
     }
 
@@ -111,10 +123,13 @@ public class TeamService {
 
     public TeamDto renameTeam(String oldName, TeamDto teamDto) throws DuplicateTeamException, TeamNotFoundException {
         var chatGroupDto = teamDto.chatGroup();
+
         if(teamRepository.existsByNameAndChatGroupChatId(teamDto.name(), chatGroupDto.chatId()))
             throw new DuplicateTeamException();
+
         var team = teamRepository.findTeamByNameAndChatGroupChatId(oldName, chatGroupDto.chatId())
                 .orElseThrow(TeamNotFoundException::new);
+
         team.setName(teamDto.name());
         return teamMapper.toDto(teamRepository.save(team));
     }
@@ -129,11 +144,13 @@ public class TeamService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
 
-        if (team.getMembers().contains(member)) {
+        if (team.getMembers().contains(member))
             throw new DuplicateTeamMemberException();
-        }
 
         team.getMembers().add(member);
+        member.getTasks().addAll(team.getTasks());
+        team.getTasks().forEach(task -> task.getMembers().add(member));
+        memberRepository.save(member);
         return teamMapper.toDto(teamRepository.save(team));
     }
 
@@ -147,9 +164,8 @@ public class TeamService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
 
-        if (!team.getMembers().contains(member)) {
+        if (!team.getMembers().contains(member))
             throw new TeamMemberNotFoundException();
-        }
 
         team.getMembers().remove(member);
         return teamMapper.toDto(teamRepository.save(team));

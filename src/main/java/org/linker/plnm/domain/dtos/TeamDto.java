@@ -8,6 +8,5 @@ public record TeamDto (
     Long id,
     String name,
     List<MemberDto> members,
-    List<Long> taskIds,
     ChatGroupDto chatGroup
 ){}

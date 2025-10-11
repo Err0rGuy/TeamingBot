@@ -62,7 +62,8 @@ public class Bot extends TelegramLongPollingBot {
         executorService.submit(() -> {
             try {
                 Update normalizedUpdate = normalizeUpdate(update);
-                if (update.getMessage() == null)
+                Message message = normalizedUpdate.getMessage();
+                if (message == null || message.getText() == null)
                     return;
                 BotApiMethod<?> response = detector.dispatch(normalizedUpdate);
                 if (response != null)
@@ -70,7 +71,7 @@ public class Bot extends TelegramLongPollingBot {
             } catch (TelegramApiException e) {
                 log.error("Failed to execute message!", e);
             } catch (Exception e) {
-                log.error("Unexpected exception while handling update!", e);
+                log.error("Unexpected exception in pipeline!", e);
             }
         });
     }

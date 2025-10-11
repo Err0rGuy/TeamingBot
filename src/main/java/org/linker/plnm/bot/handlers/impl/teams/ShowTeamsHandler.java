@@ -4,6 +4,7 @@ import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
+import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
@@ -38,23 +39,23 @@ public class ShowTeamsHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
-        return  getAllTeamsInfo(message);
+        return  createTeamsInfoResponse(message);
     }
 
     /**
      * Listing all existing teams with their members
      */
-    private BotApiMethod<?> getAllTeamsInfo(Message message) {
+    private BotApiMethod<?> createTeamsInfoResponse(Message message) {
         List<TeamDto> teams;
         try {
             teams = teamService.getAllGroupTeams(message.getChatId());
         } catch (TeamNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
         }
-        Context context = new  Context();
+        Context context = new Context();
         context.setVariable("teams", teams);
         String text = templateEngine.process("show_teams", context);
-        return MessageBuilder.buildMessage(message, text, "HTML");
+        return MessageBuilder.buildMessage(message, text, MessageParseMode.HTML);
 
     }
 }

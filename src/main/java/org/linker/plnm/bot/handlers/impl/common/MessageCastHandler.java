@@ -2,7 +2,7 @@ package org.linker.plnm.bot.handlers.impl.common;
 
 import lombok.extern.slf4j.Slf4j;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
-import org.linker.plnm.bot.helpers.messages.MessageParser;
+import org.linker.plnm.bot.helpers.parsers.MessageParser;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.services.MemberService;
@@ -17,119 +17,122 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.*;
 
-@Service @Slf4j
+@Slf4j
+@Service
 public class MessageCastHandler {
 
     private final AbsSender sender;
-
     private final TeamService teamService;
-
     private final MemberService memberService;
 
-    public MessageCastHandler(
-            AbsSender sender,
-            TeamService teamService,
-            MemberService memberService) {
+    public MessageCastHandler(AbsSender sender, TeamService teamService, MemberService memberService) {
         this.sender = sender;
         this.teamService = teamService;
         this.memberService = memberService;
     }
 
     /**
-     * Entry point: handle multicast/broadcast messages
+     * Entry point: handle multicast/broadcast messages.
      */
     public SendMessage handle(Update update) {
         Message message = update.getMessage();
         long chatId = message.getChatId();
         Set<Long> sentIds = new HashSet<>();
-        List<String> responseText = new ArrayList<>();
+        List<String> responses = new ArrayList<>();
 
         for (String teamName : MessageParser.findTeamNames(message.getText())) {
-            List<MemberDto> members = resolveMembers(teamName, chatId);
-            if (members.isEmpty())
-                continue;
-            List<BotApiMethodMessage> messages = buildMessages(members, message, sentIds);
-            sendMessage(messages);
-            responseText.add(responseText(teamName));
+            List<MemberDto> members = fetchMembers(teamName, chatId);
+            if (members.isEmpty()) continue;
+
+            List<BotApiMethodMessage> outgoingMessages = prepareMessages(members, message, sentIds);
+            sendMessages(outgoingMessages);
+            responses.add(formatResponse(teamName));
         }
-        return MessageBuilder.buildMessage(message, String.join("\n\n", responseText));
+
+        return MessageBuilder.buildMessage(message, String.join("\n\n", responses));
     }
 
     /**
-     * Sending messages to telegram API
+     * Send prepared messages to Telegram API.
      */
-    private void sendMessage(List<BotApiMethodMessage> messages) {
+    private void sendMessages(List<BotApiMethodMessage> messages) {
         for (BotApiMethodMessage msg : messages) {
             try {
                 sender.execute(msg);
             } catch (TelegramApiException e) {
-                log.error("Failed to execute multi/broad cast message!", e);
+                log.error("Failed to send broadcast message: {}", msg, e);
             }
         }
     }
 
     /**
-     * Return members if is global call or team call
+     * Fetch members either globally or from a specific team.
      */
-    private List<MemberDto> resolveMembers(String teamName, Long chatId) {
-        if ("global".equalsIgnoreCase(teamName))
-            return memberService.findAllMembers();
+    private List<MemberDto> fetchMembers(String teamName, Long chatId) {
         try {
-            return teamService.findTeam(teamName, chatId).members();
-        }catch (Exception e){
+            return "global".equalsIgnoreCase(teamName)
+                    ? memberService.findAllMembers()
+                    : teamService.findTeam(teamName, chatId).members();
+        } catch (Exception e) {
+            log.warn("Failed to fetch members for team '{}': {}", teamName, e.getMessage());
             return Collections.emptyList();
         }
     }
 
     /**
-     * Build all messages to send for members
+     * Prepare messages for each member (avoid duplicates).
      */
-    private List<BotApiMethodMessage> buildMessages(List<MemberDto> members, Message originalMessage, Set<Long> sentIds) {
+    private List<BotApiMethodMessage> prepareMessages(List<MemberDto> members, Message sourceMessage, Set<Long> sentIds) {
         List<BotApiMethodMessage> result = new ArrayList<>();
-        boolean isSuperGroup = originalMessage.getChat().isSuperGroupChat();
+        boolean isSuperGroup = sourceMessage.getChat().isSuperGroupChat();
+
         for (MemberDto member : members) {
-            if (sentIds.add(member.id()))
-                if (isSuperGroup)
-                    result.add(buildSuperGroupMessage(originalMessage, member.id()));
-                 else
-                    result.addAll(buildNormalGroupMessages(originalMessage,  member.id()));
+            if (!sentIds.add(member.id())) continue;
+
+            if (isSuperGroup) {
+                result.add(buildSuperGroupMessage(sourceMessage, member.id()));
+            } else {
+                result.addAll(buildNormalGroupMessages(sourceMessage, member.id()));
+            }
         }
         return result;
     }
 
     /**
-     * Response text
+     * Build confirmation text.
      */
-    private String responseText(String teamName) {
-        if ("global".equalsIgnoreCase(teamName)) {
-            return BotMessage.MESSAGE_SENT_TO_GLOBAL.format();
-        }
-        return BotMessage.MESSAGE_SENT_TO_TEAM.format(teamName);
+    private String formatResponse(String teamName) {
+        return "global".equalsIgnoreCase(teamName)
+                ? BotMessage.MESSAGE_SENT_TO_GLOBAL.format()
+                : BotMessage.MESSAGE_SENT_TO_TEAM.format(teamName);
     }
 
     /**
-     * Build message for supergroup member (includes link)
+     * Build message for supergroup member (includes clickable message link).
      */
     private SendMessage buildSuperGroupMessage(Message message, Long memberId) {
-        String link = "https://t.me/c/"
-                + String.valueOf(message.getChatId()).substring(4)
-                + "/" + message.getMessageId();
+        String link = String.format(
+                "https://t.me/c/%s/%d",
+                String.valueOf(message.getChatId()).substring(4),
+                message.getMessageId()
+        );
 
         String text = BotMessage.SUPER_GROUP_BROADCAST_MESSAGE.format(
                 message.getChat().getTitle(),
                 message.getText(),
                 link
         );
-        return MessageBuilder.buildMessage(memberId, text, "Markdown");
+
+        return MessageBuilder.buildMessage(memberId, text);
     }
 
     /**
-     * Build messages for normal group member (forward message)
+     * Build messages for normal group members (forward message + notice).
      */
     private List<BotApiMethodMessage> buildNormalGroupMessages(Message message, Long memberId) {
         String text = BotMessage.NORMAL_GROUP_BROADCAST_MESSAGE.format(message.getChat().getTitle());
         return List.of(
-                MessageBuilder.buildMessage(memberId, text, "Markdown"),
+                MessageBuilder.buildMessage(memberId, text),
                 MessageBuilder.buildForwardMessage(memberId, message)
         );
     }

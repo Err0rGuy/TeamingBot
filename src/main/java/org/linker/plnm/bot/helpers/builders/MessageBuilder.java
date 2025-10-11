@@ -1,5 +1,6 @@
 package org.linker.plnm.bot.helpers.builders;
 
+import org.linker.plnm.enums.MessageParseMode;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -9,18 +10,21 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 public class MessageBuilder {
 
     public static SendMessage buildMessage(Long chatId, String text, Integer replyToMessageId){
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(text);
+        SendMessage sendMessage = buildMessage(chatId, text);
         sendMessage.setReplyToMessageId(replyToMessageId);
         return sendMessage;
     }
 
-    public static SendMessage buildMessage(Long chatId, String text, String parseMode){
+    public static SendMessage buildMessage(Long chatId, String text, MessageParseMode parseMode){
+        SendMessage sendMessage = buildMessage(chatId, text);
+        sendMessage.setParseMode(parseMode.toString());
+        return sendMessage;
+    }
+
+    public static SendMessage buildMessage(Long chatId, String text){
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(text);
-        sendMessage.setParseMode(parseMode);
         return sendMessage;
     }
 
@@ -39,13 +43,13 @@ public class MessageBuilder {
     }
 
 
-    public static SendMessage buildMessage(Message message, String text, String parseMode){
+    public static SendMessage buildMessage(Message message, String text, MessageParseMode parseMode){
         SendMessage sendMessage = buildMessage(message, text);
-        sendMessage.setParseMode(parseMode);
+        sendMessage.setParseMode(parseMode.toString());
         return sendMessage;
     }
 
-    public static SendMessage buildMessage(Message message, String text, String parseMode, InlineKeyboardMarkup markup){
+    public static SendMessage buildMessage(Message message, String text, MessageParseMode parseMode, InlineKeyboardMarkup markup){
          SendMessage sendMessage = buildMessage(message, text, parseMode);
          sendMessage.setReplyMarkup(markup);
          return sendMessage;
