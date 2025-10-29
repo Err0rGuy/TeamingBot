@@ -5,6 +5,7 @@ import org.linker.plnm.bot.helpers.builders.DtoBuilder;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.parsers.MessageParser;
+import org.linker.plnm.bot.helpers.validation.TeamValidators;
 import org.linker.plnm.bot.sessions.OperationSession;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
 import org.linker.plnm.domain.dtos.TaskDto;
@@ -12,6 +13,7 @@ import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.enums.MessageParseMode;
+import org.linker.plnm.exceptions.duplication.DuplicateTeamTaskNameException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.services.TaskService;
@@ -30,14 +32,18 @@ public class CreateTeamTaskHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
+    private final TeamValidators validators;
+
     private final SessionCache<TeamDto> sessionCache;
 
     public CreateTeamTaskHandler(
             TaskService taskService,
             TeamService teamService,
+            TeamValidators validators,
             SessionCache<TeamDto> sessionCache) {
         this.taskService = taskService;
         this.teamService = teamService;
+        this.validators = validators;
         this.sessionCache = sessionCache;
     }
 
@@ -59,29 +65,16 @@ public class CreateTeamTaskHandler implements UpdateHandler {
         var session = sessionOpt.get();
 
         if (session.getStep() == 1) {
-            String checkResponse = validateTeamExistence(message);
+            String checkResponse = validators.validateTeamsExistence(message);
+
             if (checkResponse.isEmpty())
                 return promptForTasks(message, session);
+
+            sessionCache.remove(message);
             return MessageBuilder.buildMessage(message, checkResponse);
         }
+        sessionCache.remove(message);
         return handleCreateTask(message,  session);
-    }
-
-    /**
-     * Checking if given team names exists or not
-     */
-    private String validateTeamExistence(Message message) {
-        List<String> responseTxt = new ArrayList<>();
-        var teamNames = MessageParser.findTeamNames(message.getText());
-
-        if (teamNames.isEmpty())
-            return BotMessage.NO_TEAM_NAME_GIVEN.format();
-
-        for (String teamName : teamNames)
-            if (!teamService.teamExists(teamName, message.getChatId()))
-                responseTxt.add(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-
-        return String.join("\n\n", responseTxt);
     }
 
     /**
@@ -154,13 +147,16 @@ public class CreateTeamTaskHandler implements UpdateHandler {
      */
     private String tryCreateTask(TaskDto taskDto, TeamDto teamDto) {
             try {
-                taskService.saveTask(taskDto, teamDto);
+                taskService.saveTeamTask(taskDto, teamDto);
 
             } catch (MemberNotFoundException e) {
                 return BotMessage.MEMBER_HAS_NOT_STARTED.format(e.getMessage());
 
             } catch (TeamNotFoundException e) {
                 return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name());
+
+            } catch (DuplicateTeamTaskNameException e) {
+                return BotMessage.TEAM_TASK_ALREADY_EXISTS.format(taskDto.name(), teamDto.name());
             }
         return BotMessage.TEAM_TASK_CREATED.format(
                 taskDto.name(),

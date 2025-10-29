@@ -58,12 +58,10 @@ public class MessageParser {
     }
 
     @NotNull
-    public static List<Map<String, String>> findTasksToRemove(String text) {
-        return extractTasks(text, TASK_REMOVE_PATTERN, matcher -> {
-            Map<String, String> task = new HashMap<>();
-            task.put("name", matcher.group(1).trim());
-            return task;
-        });
+    public static List<String> findTasksToRemove(String text) {
+        return extractTasksNames(text, TASK_REMOVE_PATTERN, matcher ->
+            matcher.group(1).trim()
+        );
     }
 
     @NotNull
@@ -76,6 +74,15 @@ public class MessageParser {
             task.put("status", status.name());
             return task;
         });
+    }
+
+    private static List<String> extractTasksNames(String text, Pattern pattern, Function<Matcher, String> mapper) {
+        List<String> result = new ArrayList<>();
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            result.add(mapper.apply(matcher));
+        }
+        return result;
     }
 
     @NotNull

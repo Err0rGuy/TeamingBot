@@ -1,22 +1,23 @@
 package org.linker.plnm.bot.handlers.impl.tasks;
 
 import org.linker.plnm.bot.handlers.UpdateHandler;
-import org.linker.plnm.bot.helpers.builders.DtoBuilder;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.parsers.MessageParser;
+import org.linker.plnm.bot.helpers.validation.TeamValidators;
 import org.linker.plnm.bot.sessions.OperationSession;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
-import org.linker.plnm.domain.dtos.TaskDto;
 import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.enums.BotCommand;
 import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.enums.MessageParseMode;
+import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
+import org.linker.plnm.exceptions.notfound.TaskNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
+import org.linker.plnm.services.TaskService;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -28,13 +29,22 @@ public class RemoveTeamTaskHandler implements UpdateHandler {
 
     private final SessionCache<TeamDto> sessionCache;
 
+    private final TeamValidators validators;
+
     private final TeamService teamService;
+
+    private final TaskService taskService;
 
     public RemoveTeamTaskHandler(
             SessionCache<TeamDto> sessionCache,
-            TeamService teamService) {
+            TeamValidators validators,
+            TeamService teamService,
+            TaskService taskService
+    ) {
         this.sessionCache = sessionCache;
+        this.validators = validators;
         this.teamService = teamService;
+        this.taskService = taskService;
     }
 
     @Override
@@ -45,98 +55,112 @@ public class RemoveTeamTaskHandler implements UpdateHandler {
     @Override
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
+
         if (update.hasCallbackQuery())
-            return askForTeamNames(message);
-        var session = sessionCache.fetch(message)
-                .orElseThrow(() -> new IllegalStateException("Session not found!"));
+            return promptForTeamNames(message);
+
+        var sessionOpt = sessionCache.fetch(message);
+        if (sessionOpt.isEmpty()) return null;
+
+        var session = sessionOpt.get();
+
         if (session.getStep() == 1) {
-            String checkResponse = validateTeamExistence(message);
-            return (checkResponse.isEmpty()) ?
-                    askForTasksDetails(message, session):
-                    MessageBuilder.buildMessage(message, checkResponse);
+            String checkResponse = validators.validateTeamsExistence(message);
+
+            if (checkResponse.isEmpty())
+                return promptForTasks(message, session);
+
+            sessionCache.remove(message);
+            return MessageBuilder.buildMessage(message, checkResponse);
         }
-        return removeTasks(message,  session);
-
-    }
-
-    /**
-     * Checking if given team names exists or not
-     */
-    private String validateTeamExistence(Message message) {
-        List<String> responseTxt = new ArrayList<>();
-        var teamNames = MessageParser.findTeamNames(message.getText());
-
-        if (teamNames.isEmpty())
-            return BotMessage.NO_TEAM_NAME_GIVEN.format();
-
-        for (String teamName : teamNames)
-            if (!teamService.teamExists(teamName, message.getChatId()))
-                responseTxt.add(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
-
-        return String.join("\n\n", responseTxt);
+        sessionCache.remove(message);
+        return handleRemoveTasks(message,  session);
     }
 
     /**
      * Asking for team names to remove their tasks
      */
-    private BotApiMethod<?> askForTeamNames(Message message) {
+    private BotApiMethod<?> promptForTeamNames(Message message) {
         var session = TeamActionSession.builder().command(BotCommand.REMOVE_TEAM_TASK).build();
         session.incrementStep(); // step = 1
 
         sessionCache.add(message, session);
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_FOR_TEAM_NAMES.format(), MessageParseMode.HTML);
+        return MessageBuilder.buildMessage(
+                message,
+                BotMessage.ASK_FOR_TEAM_NAMES.format(),
+                MessageParseMode.HTML
+        );
     }
 
     /**
      * Asking for tasks to define with specified format
      */
-    private BotApiMethod<?> askForTasksDetails(Message message, OperationSession session) {
+    private BotApiMethod<?> promptForTasks(Message message, OperationSession<TeamDto> session) {
         var teamNames = MessageParser.findTeamNames(message.getText());
 
-        session.getTargets().addAll(teamNames);
+        session.getTargets().addAll(teamService.findAllTeams(teamNames, message.getChatId()));
         session.incrementStep(); // step = 2
         sessionCache.add(message, session);
 
-        return MessageBuilder.buildMessage(message, BotMessage.ASK_TASKS_TO_REMOVE.format(), MessageParseMode.HTML);
+        return MessageBuilder.buildMessage(
+                message,
+                BotMessage.ASK_TASKS_TO_REMOVE.format(),
+                MessageParseMode.HTML
+        );
     }
 
     /**
      * Remove team tasks
      */
-    private BotApiMethod<?> removeTasks(Message message, OperationSession session) {
+    private BotApiMethod<?> handleRemoveTasks(Message message, OperationSession<TeamDto> session) {
         List<String> responseTxt = new ArrayList<>();
-        var tasks = resolveTasks(message);
-        var teams = resolveTeams(session, message.getChat());
+        var tasks = fetchTasks(message);
+        var teams = session.getTargets();
 
         if (tasks.isEmpty())
-            return MessageBuilder.buildMessage(message, BotMessage.NO_TASKS_GIVEN.format());
+            return MessageBuilder.buildMessage(
+                    message,
+                    BotMessage.NO_TASKS_GIVEN.format()
+            );
 
-        teams.forEach(team ->
-                tasks.forEach(task ->
-                        responseTxt.add(processTaskDeletion(task, team))
-                ));
+        for (TeamDto teamDto : teams)
+            tasks.forEach(task ->
+                    responseTxt.add(tryRemoveTask(task, teamDto)
+            ));
 
-        return MessageBuilder.buildMessage(message, String.join("\n\n", responseTxt));
+        return MessageBuilder.buildMessage(
+                message,
+                String.join("\n\n", responseTxt)
+        );
     }
 
     /**
      * Parsing message text to teamDto list
      */
-    private List<TaskDto> resolveTasks(Message message) {
-        var tasks = MessageParser.findTasksToInsert(message.getText());
-        return DtoBuilder.buildTaskDtoList(tasks);
+    private List<String> fetchTasks(Message message) {
+        return MessageParser.findTasksToRemove(message.getText());
     }
 
-    private List<TeamDto> resolveTeams(OperationSession session, Chat chat) {
-        return DtoBuilder.buildTeamDtoList(session.getTargets(), chat);
-    }
-
-    private String processTaskDeletion(TaskDto taskDto, TeamDto teamDto) {
+    /**
+     * Processing task deletion for team members
+     */
+    private String tryRemoveTask(String taskName, TeamDto teamDto) {
         try {
-           // taskService.saveTeamTask(taskDto, teamDto);
-            return BotMessage.TEAM_TASK_REMOVED.format(taskDto.name(), teamDto.name());
+            taskService.removeTeamTask(taskName, teamDto);
+
+        } catch (MemberNotFoundException e) {
+            return BotMessage.MEMBER_HAS_NOT_STARTED.format(e.getMessage());
+
         } catch (TeamNotFoundException e) {
             return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name());
+
+        } catch (TaskNotFoundException e) {
+            return BotMessage.TASK_DOES_NOT_EXIST.format(taskName);
+
         }
+        return BotMessage.TEAM_TASK_REMOVED.format(
+                taskName,
+                teamDto.name()
+        );
     }
 }
