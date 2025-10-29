@@ -60,7 +60,7 @@ public class MessageCastHandler {
             try {
                 sender.execute(msg);
             } catch (TelegramApiException e) {
-                log.error("Failed to send broadcast message: {}", msg, e);
+                log.error("Failed to send broadcast message: {}", e.getMessage());
             }
         }
     }

@@ -23,7 +23,9 @@ public class CommandListHandler implements UpdateHandler {
      */
     @Override
     public BotApiMethod<?> handle(Update update) {
-        return MessageBuilder.buildMessage(update.getMessage(), BotMessage.COMMANDS_LIST.format(), MessageParseMode.HTML);
+        return MessageBuilder.buildMessage(
+                update.getMessage(), BotMessage.COMMANDS_LIST.format(), MessageParseMode.HTML
+        );
     }
 
 }

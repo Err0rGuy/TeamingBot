@@ -2,8 +2,8 @@ HELP.md
 target/
 build/
 .mvn/wrapper/maven-wrapper.jar
-src/main/resources/application.yaml
-src/test/resources/application.yaml
+.env
+src/test/resources/.env
 node_modules/
 package.json
 package-lock.json
