@@ -40,17 +40,17 @@ public class EditTeamMenuHandler implements UpdateHandler {
         Message message = update.getMessage();
 
         if (update.hasCallbackQuery())
-            return askForTeamName(message);
+            return promptForTeamNames(message);
 
         sessionCache.remove(message);
-        return editTeam(message);
+        return handleEditTeamMenu(message);
     }
 
     /**
      * Asking for team name to edit
      */
-    private SendMessage askForTeamName(Message message) {
-        if (!teamService.anyTeamExists(message.getChatId()))
+    private SendMessage promptForTeamNames(Message message) {
+        if (teamService.noTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
 
         var session = TeamActionSession.builder()
@@ -63,10 +63,10 @@ public class EditTeamMenuHandler implements UpdateHandler {
     /**
      * Returning team edit menu
      */
-    private BotApiMethod<?> editTeam(Message message) {
+    private BotApiMethod<?> handleEditTeamMenu(Message message) {
         String teamName = MessageParser.extractFirstPart(message.getText()).orElse("");
 
-        if (!teamService.teamExists(teamName, message.getChatId()))
+        if (teamService.teamNotExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
 
         return MenuBuilder.editTeamMenu(message, teamName);

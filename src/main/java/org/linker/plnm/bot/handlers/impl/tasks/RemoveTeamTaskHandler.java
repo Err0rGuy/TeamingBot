@@ -14,7 +14,7 @@ import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TaskNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
-import org.linker.plnm.services.TaskService;
+import org.linker.plnm.services.TeamTaskService;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -33,18 +33,18 @@ public class RemoveTeamTaskHandler implements UpdateHandler {
 
     private final TeamService teamService;
 
-    private final TaskService taskService;
+    private final TeamTaskService teamTaskService;
 
     public RemoveTeamTaskHandler(
             SessionCache<TeamDto> sessionCache,
             TeamValidators validators,
             TeamService teamService,
-            TaskService taskService
+            TeamTaskService teamTaskService
     ) {
         this.sessionCache = sessionCache;
         this.validators = validators;
         this.teamService = teamService;
-        this.taskService = taskService;
+        this.teamTaskService = teamTaskService;
     }
 
     @Override
@@ -146,7 +146,7 @@ public class RemoveTeamTaskHandler implements UpdateHandler {
      */
     private String tryRemoveTask(String taskName, TeamDto teamDto) {
         try {
-            taskService.removeTeamTask(taskName, teamDto);
+            teamTaskService.removeTeamTask(taskName, teamDto);
 
         } catch (MemberNotFoundException e) {
             return BotMessage.MEMBER_HAS_NOT_STARTED.format(e.getMessage());

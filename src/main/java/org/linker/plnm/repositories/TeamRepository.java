@@ -1,16 +1,18 @@
 package org.linker.plnm.repositories;
 
-import org.linker.plnm.domain.entities.ChatGroup;
 import org.linker.plnm.domain.entities.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
+
+@Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
     boolean existsByNameAndChatGroupChatId(String name, Long chatGroupChatId);
@@ -29,6 +31,9 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     Optional<Team> findTeamByNameAndChatGroupChatId(String name, Long chatGroupChatId);
 
+    @Query(value = "SELECT t FROM Team t WHERE t.name in :teamNames AND t.chatGroup.chatId = :chatId")
+    List<Team> getAllTeamsByNameAndChatId(@Param("teamNames") List<String> teamNames, @Param("chatId") Long chatId);
+
     @Modifying @Transactional
     @Query(value = "DELETE FROM team_members WHERE member_id = :memberId", nativeQuery = true)
     void deleteAllByMemberId(@Param("memberId") Long memberId);
@@ -36,6 +41,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Modifying @Transactional
     @Query(value = "DELETE FROM team_tasks WHERE task_id = :taskId", nativeQuery = true)
     void deleteAllByTaskId(@Param("taskId") Long taskId);
+
 
     List<Team> findAllByChatGroupChatId(Long chatGroupChatId);
 

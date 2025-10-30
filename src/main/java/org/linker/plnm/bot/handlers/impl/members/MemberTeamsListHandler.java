@@ -8,6 +8,7 @@ import org.linker.plnm.enums.BotMessage;
 import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
+import org.linker.plnm.services.MemberService;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -28,14 +29,16 @@ public class MemberTeamsListHandler implements UpdateHandler {
     private final TelegramUserMapper telegramUserMapper;
 
     private final TemplateEngine templateEngine;
+    private final MemberService memberService;
 
     public MemberTeamsListHandler(
             TeamService teamService,
             TelegramUserMapper telegramUserMapper,
-            TemplateEngine templateEngine) {
+            TemplateEngine templateEngine, MemberService memberService) {
         this.teamService = teamService;
         this.telegramUserMapper = telegramUserMapper;
         this.templateEngine = templateEngine;
+        this.memberService = memberService;
     }
 
     @Override
@@ -47,25 +50,21 @@ public class MemberTeamsListHandler implements UpdateHandler {
     public BotApiMethod<?> handle(Update update) {
         Message message = update.getMessage();
         var memberDto = telegramUserMapper.toDto(message.getFrom());
-        return createMemberTeamsResponse(memberDto, message);
+        return fetchMemberTeams(memberDto, message);
     }
 
     /**
      * Listing member teams
      */
-    private BotApiMethod<?> createMemberTeamsResponse(MemberDto member, Message message) {
+    private BotApiMethod<?> fetchMemberTeams(MemberDto member, Message message) {
         List<TeamDto> teams;
 
         try {
-            teams = teamService.getMemberTeams(member, message.getChatId());
+            teams = memberService.getAllMemberTeams(member.id());
 
         } catch (MemberNotFoundException e) {
             return MessageBuilder.buildMessage(message, BotMessage.YOU_DID_NOT_STARTED.format());
-
-        } catch (TeamNotFoundException e) {
-            return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_FOUND.format());
         }
-
         var context = new Context();
         context.setVariable("teams", teams);
 

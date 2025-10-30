@@ -1,7 +1,7 @@
 package org.linker.plnm.domain.dtos;
 
 import lombok.Builder;
-import org.linker.plnm.domain.entities.Task;
+import org.linker.plnm.enums.TaskStatus;
 import java.util.List;
 
 
@@ -11,5 +11,5 @@ public record TaskDto(
         String name,
         String description,
         List<Long> memberIds,
-        Task.TaskStatus status
+        TaskStatus status
 ) {}

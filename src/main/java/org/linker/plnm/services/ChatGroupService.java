@@ -1,31 +1,38 @@
 package org.linker.plnm.services;
 
-import org.linker.plnm.domain.dtos.ChatGroupDto;
+import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.inherited.ChatGroupMapper;
+import org.linker.plnm.domain.mappers.inherited.TeamMapper;
 import org.linker.plnm.exceptions.notfound.ChatGroupNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class ChatGroupService {
 
     private final ChatGroupRepository chatGroupRepository;
 
-    private final ChatGroupMapper chatGroupMapper;
+    private final TeamMapper teamMapper;
 
     public ChatGroupService(
             ChatGroupRepository chatGroupRepository,
-            ChatGroupMapper chatGroupMapper) {
+            TeamMapper teamMapper
+    ) {
         this.chatGroupRepository = chatGroupRepository;
-        this.chatGroupMapper = chatGroupMapper;
+        this.teamMapper = teamMapper;
     }
 
-
-    public ChatGroupDto findChatGroup(Long chatId) {
-        var chatGroup = chatGroupRepository.findByChatId(chatId)
+    @Transactional(readOnly = true)
+    public List<TeamDto> getAllGroupTeams(Long chatId) {
+        var teams = chatGroupRepository.getAllTeamsById(chatId)
                 .orElseThrow(ChatGroupNotFoundException::new);
-        return chatGroupMapper.toDto(chatGroup);
+
+        if (teams.isEmpty()) {
+            throw new TeamNotFoundException();
+        }
+        return teamMapper.toDtoList(teams);
     }
-
-
 }

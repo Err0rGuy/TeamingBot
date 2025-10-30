@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.linker.plnm.enums.TaskStatus;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,23 +14,14 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Task {
+public class TeamTask {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @Builder.Default
-    @JoinTable(
-            name = "member_tasks",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "member_id")
-    )
-    private Set<Member> members = new HashSet<>();
-
-    @ManyToMany(fetch =  FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.LAZY)
     @Builder.Default
     @JoinTable(
             name = "team_tasks",
@@ -43,10 +36,4 @@ public class Task {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TaskStatus status = TaskStatus.UNDONE;
-
-    public enum TaskStatus {
-        UNDONE,
-        IN_PROGRESS,
-        DONE
-    }
 }

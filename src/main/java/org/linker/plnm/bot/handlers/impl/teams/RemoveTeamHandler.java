@@ -53,7 +53,7 @@ public class RemoveTeamHandler implements UpdateHandler {
      * Asking team names to remove
      */
     private SendMessage promptForTeamNames(Message message) {
-        if (!teamService.anyTeamExists(message.getChatId()))
+        if (teamService.noTeamExists(message.getChatId()))
             return MessageBuilder.buildMessage(
                     message,
                     BotMessage.NO_TEAM_FOUND.format()

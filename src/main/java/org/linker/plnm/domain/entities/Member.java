@@ -3,7 +3,6 @@ package org.linker.plnm.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,12 +25,12 @@ public class Member {
     private String lastName;
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members", cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "members", cascade = {CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<Team> teams = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
-    private Set<Task> tasks = new HashSet<>();
+    @ManyToMany(mappedBy = "members",  cascade = {CascadeType.MERGE}, fetch = FetchType.LAZY)
+    private Set<MemberTask> tasks = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {

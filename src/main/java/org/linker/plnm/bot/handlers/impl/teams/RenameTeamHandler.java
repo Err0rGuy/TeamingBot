@@ -60,7 +60,7 @@ public class RenameTeamHandler implements UpdateHandler {
      * Ask for team new name
       */
     private SendMessage promptForNewTeamName(Message message, String teamName) {
-        if (!teamService.teamExists(teamName, message.getChatId()))
+        if (teamService.teamNotExists(teamName, message.getChatId()))
             return MessageBuilder.buildMessage(
                     message,
                     BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)
@@ -91,7 +91,6 @@ public class RenameTeamHandler implements UpdateHandler {
                     message,
                     BotMessage.TEAM_RENAMED.format(teamDto.name(), newTeam.name())
             );
-
         } catch (DuplicateTeamException e) {
             return MessageBuilder.buildMessage(message, BotMessage.TEAM_ALREADY_EXISTS.format(newTeam.name()));
 

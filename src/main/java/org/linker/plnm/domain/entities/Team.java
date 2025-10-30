@@ -3,7 +3,6 @@ package org.linker.plnm.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,7 +27,7 @@ public class Team {
     private String name;
 
     @Builder.Default
-    @ManyToMany(fetch =  FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch =  FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "team_members",
             joinColumns = @JoinColumn(name = "team_id"),
@@ -37,10 +36,10 @@ public class Team {
     private Set<Member> members = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
-    private Set<Task> tasks = new HashSet<>();
+    @ManyToMany(mappedBy = "teams", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    private Set<TeamTask> tasks = new HashSet<>();
 
-    @ManyToOne(cascade = {CascadeType.MERGE})
+    @ManyToOne(cascade = {CascadeType.MERGE}, fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_group_id", nullable = false)
     private ChatGroup chatGroup;
 

@@ -1,13 +1,15 @@
 package org.linker.plnm.services;
 
-
 import org.linker.plnm.domain.dtos.MemberDto;
+import org.linker.plnm.domain.dtos.TeamDto;
 import org.linker.plnm.domain.mappers.inherited.MemberMapper;
+import org.linker.plnm.domain.mappers.inherited.TeamMapper;
 import org.linker.plnm.exceptions.duplication.DuplicateMemberException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
+import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -18,12 +20,16 @@ public class MemberService {
 
     private final MemberMapper memberMapper;
 
+    private final TeamMapper teamMapper;
+
     public MemberService(
             MemberRepository memberRepository,
-            MemberMapper memberMapper
+            MemberMapper memberMapper,
+            TeamMapper teamMapper
     ) {
         this.memberRepository = memberRepository;
         this.memberMapper = memberMapper;
+        this.teamMapper = teamMapper;
     }
 
     public MemberDto saveMember(MemberDto memberDto) {
@@ -33,18 +39,23 @@ public class MemberService {
         return memberMapper.toDto(member);
     }
 
+    @Transactional(readOnly = true)
     public MemberDto findMember(String userName) {
         var member = memberRepository.findByUserName(userName)
                 .orElseThrow(MemberNotFoundException::new);
         return memberMapper.toDto(member);
     }
 
-    public List<MemberDto> findAllMembers() {
-        return memberMapper.toDtoList(memberRepository.findAll());
+    @Transactional(readOnly = true)
+    public List<TeamDto> getAllMemberTeams(Long memberId) {
+        var teams = memberRepository.getAllMemberTeams(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+
+        return teamMapper.toDtoList(teams);
     }
 
-    public boolean memberExists(String username) {
-        return memberRepository.existsByUserName(username);
+    public List<MemberDto> findAllMembers() {
+        return memberMapper.toDtoList(memberRepository.findAll());
     }
 
     public boolean memberExists(Long telegramId) {

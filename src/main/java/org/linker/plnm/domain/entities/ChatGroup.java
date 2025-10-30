@@ -21,6 +21,6 @@ public class ChatGroup {
     private String name;
 
     @Builder.Default
-    @OneToMany(mappedBy = "chatGroup", cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "chatGroup", cascade = {CascadeType.MERGE}, fetch = FetchType.LAZY)
     private Set<Team> teams =  new HashSet<>();
 }

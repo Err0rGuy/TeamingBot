@@ -68,16 +68,18 @@ public class RemoveMemberHandler implements UpdateHandler {
      * Asking for members usernames
      */
     private SendMessage promptForUsernames(Message message, String teamName) {
-        if (!teamService.teamExists(teamName, message.getChatId()))
+        TeamDto teamDto;
+        try {
+            teamDto = teamService.findTeam(teamName, message.getChatId());
+        } catch (TeamNotFoundException e){
             return MessageBuilder.buildMessage(
                     message,
                     BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)
             );
-
-        var team = teamService.findTeam(teamName, message.getChatId());
+        }
         var session = TeamActionSession.builder()
                 .command(BotCommand.REMOVE_MEMBER)
-                .teams(List.of(team))
+                .teams(List.of(teamDto))
                 .build();
 
         sessionCache.add(message, session);

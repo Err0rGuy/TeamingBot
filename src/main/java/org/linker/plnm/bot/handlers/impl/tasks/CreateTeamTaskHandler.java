@@ -16,7 +16,7 @@ import org.linker.plnm.enums.MessageParseMode;
 import org.linker.plnm.exceptions.duplication.DuplicateTeamTaskNameException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
-import org.linker.plnm.services.TaskService;
+import org.linker.plnm.services.TeamTaskService;
 import org.linker.plnm.services.TeamService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -28,7 +28,7 @@ import java.util.List;
 @Service
 public class CreateTeamTaskHandler implements UpdateHandler {
 
-    private final TaskService taskService;
+    private final TeamTaskService teamTaskService;
 
     private final TeamService teamService;
 
@@ -37,11 +37,11 @@ public class CreateTeamTaskHandler implements UpdateHandler {
     private final SessionCache<TeamDto> sessionCache;
 
     public CreateTeamTaskHandler(
-            TaskService taskService,
+            TeamTaskService teamTaskService,
             TeamService teamService,
             TeamValidators validators,
             SessionCache<TeamDto> sessionCache) {
-        this.taskService = taskService;
+        this.teamTaskService = teamTaskService;
         this.teamService = teamService;
         this.validators = validators;
         this.sessionCache = sessionCache;
@@ -97,8 +97,8 @@ public class CreateTeamTaskHandler implements UpdateHandler {
      */
     private BotApiMethod<?> promptForTasks(Message message, OperationSession<TeamDto> session) {
         var teamNames = MessageParser.findTeamNames(message.getText());
-
         session.getTargets().addAll(teamService.findAllTeams(teamNames, message.getChatId()));
+
         session.incrementStep(); // step = 2
         sessionCache.add(message, session);
 
@@ -147,10 +147,7 @@ public class CreateTeamTaskHandler implements UpdateHandler {
      */
     private String tryCreateTask(TaskDto taskDto, TeamDto teamDto) {
             try {
-                taskService.saveTeamTask(taskDto, teamDto);
-
-            } catch (MemberNotFoundException e) {
-                return BotMessage.MEMBER_HAS_NOT_STARTED.format(e.getMessage());
+                teamTaskService.saveTeamTask(taskDto, teamDto);
 
             } catch (TeamNotFoundException e) {
                 return BotMessage.TEAM_DOES_NOT_EXISTS.format(teamDto.name());

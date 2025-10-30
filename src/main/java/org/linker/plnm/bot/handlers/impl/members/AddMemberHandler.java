@@ -65,14 +65,14 @@ public class AddMemberHandler implements UpdateHandler {
      * Step 1: Ask user to provide usernames to add.
      */
     private SendMessage promptForUsernames(Message message, String teamName) {
-        if (!teamService.teamExists(teamName, message.getChatId())) {
+        if (teamService.teamNotExists(teamName, message.getChatId())) {
             return MessageBuilder.buildMessage(
                     message,
                     BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName)
             );
         }
-
         TeamDto team = teamService.findTeam(teamName, message.getChatId());
+
         var session = TeamActionSession.builder()
                 .command(BotCommand.ADD_MEMBER)
                 .teams(List.of(team))

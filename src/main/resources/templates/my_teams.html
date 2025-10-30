@@ -1,5 +1,5 @@
 <th:block th:if="${#lists.isEmpty(teams)}">
-    • There is no team you are in!
+    ❌ There is no team you are in!
 </th:block>
 <th:block th:if="${!#lists.isEmpty(teams)}">
 <th:block th:each="team, iterStat : ${teams}">

@@ -10,16 +10,21 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver # For MySQL
 
-
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         format_sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
 bot:
   name: TeamingBot
   token: ${BOT_TOKEN}
   username: ${BOT_USERNAME}
+
+logging:
+  level:
+    org.hibernate.loader.entity: TRACE
+    org.hibernate.engine.loading.internal.LoadContexts: TRACE
+
+debug: false

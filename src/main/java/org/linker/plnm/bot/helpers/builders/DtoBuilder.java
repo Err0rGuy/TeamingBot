@@ -3,10 +3,9 @@ package org.linker.plnm.bot.helpers.builders;
 import org.linker.plnm.domain.dtos.ChatGroupDto;
 import org.linker.plnm.domain.dtos.TaskDto;
 import org.linker.plnm.domain.dtos.TeamDto;
-import org.linker.plnm.domain.entities.Task;
+import org.linker.plnm.enums.TaskStatus;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class DtoBuilder {
     private static TaskDto buildTaskDto(Map<String, String> body) {
         return TaskDto.builder()
                 .name(body.get("name"))
-                .status(Task.TaskStatus.valueOf(body.get("status")))
+                .status(TaskStatus.valueOf(body.get("status")))
                 .description(body.get("description"))
                 .build();
     }

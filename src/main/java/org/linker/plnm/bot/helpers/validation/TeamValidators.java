@@ -27,7 +27,7 @@ public class TeamValidators {
             return BotMessage.NO_TEAM_NAME_GIVEN.format();
 
         for (String teamName : teamNames)
-            if (!teamService.teamExists(teamName, message.getChatId()))
+            if (teamService.teamNotExists(teamName, message.getChatId()))
                 responseTxt.add(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
 
         return String.join("\n\n", responseTxt);
