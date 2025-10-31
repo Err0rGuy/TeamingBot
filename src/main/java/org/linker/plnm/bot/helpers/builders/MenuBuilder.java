@@ -13,9 +13,8 @@ public class MenuBuilder {
 
     public static SendMessage startMenu(Message message) {
         var commandsBtn = KeyboardBuilder.buildButton("❖ Commands", BotCommand.COMMANDS.str());
-        var taskMenuBtn = KeyboardBuilder.buildButton("❖ Tasks Action Menu", BotCommand.TASKS_MENU.str());
         var teamMenuBtn = KeyboardBuilder.buildButton("❖ Teams Action Menu", BotCommand.TEAMS_MENU.str());
-        var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn, teamMenuBtn, taskMenuBtn);
+        var markup = KeyboardBuilder.buildVerticalMenu(commandsBtn, teamMenuBtn);
         return MessageBuilder.buildMessage(
                 message, BotMessage.START_RESPONSE.format(), MessageParseMode.HTML, markup);
     }
@@ -27,19 +26,9 @@ public class MenuBuilder {
                 message, BotMessage.START_RESPONSE.format(), MessageParseMode.HTML, markup);
     }
 
-    public static SendMessage tasksMenu(Message message) {
-        return MessageBuilder.buildMessage(
-                message, BotMessage.TASKS_MENU_HEADER.format(), tasksActionsMarkup());
-    }
-
-    public static EditMessageText tasksMenuBackward(Message message) {
-        return MessageBuilder.buildEditMessageText(
-                message, BotMessage.TASKS_MENU_HEADER.format(), tasksActionsMarkup());
-    }
-
     public static EditMessageText teamsMenuBackward(Message message) {
         return MessageBuilder.buildEditMessageText(
-                message, BotMessage.TASKS_MENU_HEADER.format(), teamsActionsMarkup());
+                message, BotMessage.TEAMS_MENU_HEADER.format(), teamsActionsMarkup());
     }
 
     public static SendMessage teamsMenu(Message message) {
@@ -55,42 +44,6 @@ public class MenuBuilder {
         var markup = KeyboardBuilder.buildVerticalMenu(renameBtn, addMemberBtn, removeMemberBtn, backBtn);
         return MessageBuilder.buildMessage(
                 message, BotMessage.ASK_FOR_EDIT_OPTIONS.format(teamName), markup);
-    }
-
-    public static EditMessageText taskCreationMenu(Message message) {
-        var createTeamTaskBtn = KeyboardBuilder.buildButton("⬧ Team Task", BotCommand.CREATE_TEAM_TASK.str());
-        var createMemberTaskBtn = KeyboardBuilder.buildButton("⬧ Member Task", BotCommand.CREATE_MEMBER_TASK.str());
-        var backBtn = KeyboardBuilder.buildButton("⟵ Back", BotCommand.TASKS_MENU.str() + " " + BotCommand.BACKWARD.str());
-        var markup = KeyboardBuilder.buildVerticalMenu(createTeamTaskBtn, createMemberTaskBtn, backBtn);
-        return MessageBuilder.buildEditMessageText(
-                message, BotMessage.TASK_CREATION_MENU_HEADER.format(), markup);
-    }
-
-    public static EditMessageText taskDeletionMenu(Message message) {
-        var createTeamTaskBtn = KeyboardBuilder.buildButton("⬧ Team Task", BotCommand.REMOVE_TEAM_TASK.str());
-        var createMemberTaskBtn = KeyboardBuilder.buildButton("⬧ Member Task", BotCommand.REMOVE_MEMBER_TASK.str());
-        var backBtn = KeyboardBuilder.buildButton("⟵ Back", BotCommand.TASKS_MENU.str() + " " + BotCommand.BACKWARD.str());
-        var markup = KeyboardBuilder.buildVerticalMenu(createTeamTaskBtn, createMemberTaskBtn, backBtn);
-        return MessageBuilder.buildEditMessageText(
-                message, BotMessage.TASK_DELETION_MENU_HEADER.format(), markup);
-    }
-
-    public static EditMessageText showTasksMenu(Message message) {
-        var createTeamTaskBtn = KeyboardBuilder.buildButton("⬧ Team Task", BotCommand.SHOW_TEAM_TASKS.str());
-        var createMemberTaskBtn = KeyboardBuilder.buildButton("⬧ Member Task", BotCommand.SHOW_MEMBER_TASKS.str());
-        var backBtn = KeyboardBuilder.buildButton("⟵ Back", BotCommand.TASKS_MENU_BACKWARD.str());
-        var markup = KeyboardBuilder.buildVerticalMenu(createTeamTaskBtn, createMemberTaskBtn, backBtn);
-        return MessageBuilder.buildEditMessageText(
-                message, BotMessage.TASK_SHOWING_MENU_HEADER.format(), markup);
-    }
-
-    private static InlineKeyboardMarkup tasksActionsMarkup() {
-        var createTaskMenuBtn = KeyboardBuilder.buildButton("✜ Create Task", BotCommand.CREATE_TASK_MENU.str());
-        var removeTaskMenuBtn = KeyboardBuilder.buildButton("✜ Remove Task", BotCommand.REMOVE_TASK_MENU.str());
-        var changeTaskStatusMenuBtn = KeyboardBuilder.buildButton("✜ Change Task Status", BotCommand.UPDATE_TASK_STATUS.str());
-        var seeTasksMenuBtn = KeyboardBuilder.buildButton("✜ See Tasks", BotCommand.SHOW_TASKS_MENU.str());
-        return KeyboardBuilder.buildVerticalMenu(
-                createTaskMenuBtn, removeTaskMenuBtn, changeTaskStatusMenuBtn, seeTasksMenuBtn);
     }
 
     private static InlineKeyboardMarkup teamsActionsMarkup() {

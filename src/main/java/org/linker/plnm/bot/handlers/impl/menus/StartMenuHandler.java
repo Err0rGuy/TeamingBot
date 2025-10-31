@@ -1,5 +1,6 @@
 package org.linker.plnm.bot.handlers.impl.menus;
 
+import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.domain.dtos.MemberDto;
 import org.linker.plnm.domain.mappers.inherited.TelegramUserMapper;
 import org.linker.plnm.enums.BotCommand;
@@ -47,8 +48,9 @@ public class StartMenuHandler implements UpdateHandler {
         User user = message.getFrom();
         MemberDto memberDto = telegramUserMapper.toDto(user);
 
-        if (!memberService.memberExists(memberDto.id()))
-            memberDto = memberService.saveMember(memberDto);
+        if (!memberService.memberExists(memberDto.id())) {
+            memberService.saveMember(memberDto);
+        }
 
         return (validation.isGroup(message))
                 ? MenuBuilder.startMenu(message)

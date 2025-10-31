@@ -1,14 +1,11 @@
 package org.linker.plnm.bot.helpers.builders;
 
 import org.linker.plnm.domain.dtos.ChatGroupDto;
-import org.linker.plnm.domain.dtos.TaskDto;
 import org.linker.plnm.domain.dtos.TeamDto;
-import org.linker.plnm.enums.TaskStatus;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class DtoBuilder {
 
@@ -31,21 +28,6 @@ public class DtoBuilder {
                 .name(teamName)
                 .chatGroup(chatGroupDto)
                 .build();
-    }
-
-    private static TaskDto buildTaskDto(Map<String, String> body) {
-        return TaskDto.builder()
-                .name(body.get("name"))
-                .status(TaskStatus.valueOf(body.get("status")))
-                .description(body.get("description"))
-                .build();
-    }
-
-    public static List<TaskDto> buildTaskDtoList(List<Map<String, String>> tasks) {
-        var taskDtoList = new ArrayList<TaskDto>();
-        for (Map<String, String> task : tasks)
-            taskDtoList.add(buildTaskDto(task));
-        return taskDtoList;
     }
 
     public static List<TeamDto> buildTeamDtoList(List<String> teamNames,  Chat chat) {

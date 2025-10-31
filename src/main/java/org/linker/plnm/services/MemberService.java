@@ -6,7 +6,6 @@ import org.linker.plnm.domain.mappers.inherited.MemberMapper;
 import org.linker.plnm.domain.mappers.inherited.TeamMapper;
 import org.linker.plnm.exceptions.duplication.DuplicateMemberException;
 import org.linker.plnm.exceptions.notfound.MemberNotFoundException;
-import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.repositories.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +13,6 @@ import java.util.List;
 
 @Service
 public class MemberService {
-
 
     private final MemberRepository memberRepository;
 
@@ -32,11 +30,11 @@ public class MemberService {
         this.teamMapper = teamMapper;
     }
 
-    public MemberDto saveMember(MemberDto memberDto) {
+    public void saveMember(MemberDto memberDto) {
         if (memberRepository.existsByUserName(memberDto.userName()))
             throw new DuplicateMemberException();
-        var member = memberRepository.save(memberMapper.toEntity(memberDto));
-        return memberMapper.toDto(member);
+
+        memberRepository.save(memberMapper.toEntity(memberDto));
     }
 
     @Transactional(readOnly = true)
@@ -60,5 +58,9 @@ public class MemberService {
 
     public boolean memberExists(Long telegramId) {
         return memberRepository.existsById(telegramId);
+    }
+
+    public boolean memberNotExists(String userName) {
+        return !memberRepository.existsByUserName(userName);
     }
 }

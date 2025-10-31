@@ -2,7 +2,8 @@
     ❌ There is no team you are in!
 </th:block>
 <th:block th:if="${!#lists.isEmpty(teams)}">
-<th:block th:each="team, iterStat : ${teams}">
+    <b>Your Teams:</b>
+    <th:block th:each="team, iterStat : ${teams}">
 <b th:text="' • ' + ${team.name}"></b>
 </th:block>
 </th:block>

@@ -2,8 +2,6 @@ package org.linker.plnm.domain.dtos;
 
 import lombok.Builder;
 
-import java.util.List;
-
 
 @Builder
 public record MemberDto(
@@ -11,9 +9,7 @@ public record MemberDto(
         String firstName,
         String lastName,
         String userName,
-        String displayName,
-        List<Long> teamIds,
-        List<Long> taskIds
+        String displayName
 ) {
     public String displayName() {
         return this.userName != null

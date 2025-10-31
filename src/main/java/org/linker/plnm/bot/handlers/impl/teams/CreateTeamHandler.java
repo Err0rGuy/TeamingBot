@@ -68,7 +68,7 @@ public class CreateTeamHandler implements UpdateHandler {
      */
     private BotApiMethod<?> handleCreateTeams(Message message) {
         List<String> responseTxt = new ArrayList<>();
-        var teams = resolveTeams(message);
+        var teams = fetchTeams(message);
 
         if (teams.isEmpty())
             return MessageBuilder.buildMessage(message, BotMessage.NO_TEAM_NAME_GIVEN.format());
@@ -83,7 +83,7 @@ public class CreateTeamHandler implements UpdateHandler {
     /**
      * Retuning teamDto list
      */
-    private List<TeamDto> resolveTeams(Message message) {
+    private List<TeamDto> fetchTeams(Message message) {
         var teamNames = MessageParser.findTeamNames(message.getText());
         return DtoBuilder.buildTeamDtoList(teamNames, message.getChat());
     }

@@ -20,9 +20,7 @@ import org.linker.plnm.bot.handlers.UpdateHandler;
 import org.linker.plnm.bot.helpers.cache.SessionCache;
 import org.linker.plnm.bot.helpers.builders.MessageBuilder;
 import org.linker.plnm.bot.sessions.impl.TeamActionSession;
-
 import java.util.List;
-import java.util.stream.Stream;
 
 @Service
 public class RemoveMemberHandler implements UpdateHandler {
@@ -95,13 +93,13 @@ public class RemoveMemberHandler implements UpdateHandler {
      * Removing members from specific team
      */
     private BotApiMethod<?> handleRemoveMembers(Message message, TeamDto teamDto) {
-        var usernames = MessageParser.findUsernames(message.getText());
+        var userNames = MessageParser.findUsernames(message.getText());
 
-        if (usernames.length == 0) {
+        if (userNames.isEmpty()) {
             return MessageBuilder.buildMessage(message, BotMessage.NO_USERNAME_GIVEN.format());
         }
         List<String> results =
-                Stream.of(usernames)
+                userNames.stream()
                         .map(user -> tryRemoveMember(user, teamDto))
                         .toList();
         return MessageBuilder.buildMessage(

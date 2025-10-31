@@ -16,7 +16,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 bot:
   name: TeamingBot
   token: ${BOT_TOKEN}
@@ -24,7 +24,6 @@ bot:
 
 logging:
   level:
-    org.hibernate.loader.entity: TRACE
-    org.hibernate.engine.loading.internal.LoadContexts: TRACE
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: DEBUG
 
-debug: false
+debug: true

@@ -21,7 +21,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 @Service
 public class AddMemberHandler implements UpdateHandler {
@@ -91,13 +90,13 @@ public class AddMemberHandler implements UpdateHandler {
      * Step 2: Parse usernames and try to add them to the team.
      */
     private BotApiMethod<?> handleAddMembers(Message message, TeamDto team) {
-        String[] usernames = MessageParser.findUsernames(message.getText());
-        if (usernames.length == 0) {
+        List<String> userNames = MessageParser.findUsernames(message.getText());
+        if (userNames.isEmpty()) {
             return MessageBuilder.buildMessage(message, BotMessage.NO_USERNAME_GIVEN.format());
         }
 
         List<String> results =
-                Stream.of(usernames)
+                userNames.stream()
                         .map(username -> tryAddMember(username, team.name(), message.getChatId()))
                         .toList();
 

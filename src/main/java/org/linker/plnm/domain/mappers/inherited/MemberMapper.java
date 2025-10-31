@@ -6,5 +6,4 @@ import org.linker.plnm.domain.mappers.Mapper;
 import org.mapstruct.NullValueMappingStrategy;
 
 @org.mapstruct.Mapper(componentModel = "spring", nullValueMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT)
-public interface MemberMapper extends Mapper<Member, MemberDto> {
-}
+public interface MemberMapper extends Mapper<Member, MemberDto> {}

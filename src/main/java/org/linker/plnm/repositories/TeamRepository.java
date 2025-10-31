@@ -35,11 +35,11 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> getAllTeamsByNameAndChatId(@Param("teamNames") List<String> teamNames, @Param("chatId") Long chatId);
 
     @Modifying @Transactional
-    @Query(value = "DELETE FROM team_members WHERE member_id = :memberId", nativeQuery = true)
+    @Query(value = "DELETE FROM teams_members WHERE member_id = :memberId", nativeQuery = true)
     void deleteAllByMemberId(@Param("memberId") Long memberId);
 
     @Modifying @Transactional
-    @Query(value = "DELETE FROM team_tasks WHERE task_id = :taskId", nativeQuery = true)
+    @Query(value = "DELETE FROM teams_tasks WHERE task_id = :taskId", nativeQuery = true)
     void deleteAllByTaskId(@Param("taskId") Long taskId);
 
 

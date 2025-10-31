@@ -19,15 +19,14 @@ public class TeamValidators {
         this.teamService = teamService;
     }
 
-    public String validateTeamsExistence(Message message) {
+    public String validateTeamsExistence(List<String> teamNames, Long chatId) {
         List<String> responseTxt = new ArrayList<>();
-        var teamNames = MessageParser.findTeamNames(message.getText());
 
         if (teamNames.isEmpty())
             return BotMessage.NO_TEAM_NAME_GIVEN.format();
 
         for (String teamName : teamNames)
-            if (teamService.teamNotExists(teamName, message.getChatId()))
+            if (teamService.teamNotExists(teamName, chatId))
                 responseTxt.add(BotMessage.TEAM_DOES_NOT_EXISTS.format(teamName));
 
         return String.join("\n\n", responseTxt);

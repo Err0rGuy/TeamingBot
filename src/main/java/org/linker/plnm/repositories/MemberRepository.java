@@ -16,6 +16,9 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends JpaRepository<Member,Long> {
 
+    @Query(value = "SELECT m FROM Member m WHERE m.userName in :userNames")
+    List<Member> findAllByUserNames(@Param("userNames") List<String> userNames);
+
     Optional<Member> findByUserName(String userName);
 
     boolean existsByUserName(String userName);

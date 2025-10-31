@@ -12,11 +12,9 @@ import org.linker.plnm.exceptions.notfound.TeamMemberNotFoundException;
 import org.linker.plnm.exceptions.notfound.TeamNotFoundException;
 import org.linker.plnm.repositories.ChatGroupRepository;
 import org.linker.plnm.repositories.MemberRepository;
-import org.linker.plnm.repositories.TeamTaskRepository;
 import org.linker.plnm.repositories.TeamRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
 @Service
 public class TeamService {
@@ -31,21 +29,17 @@ public class TeamService {
 
     private final TeamMapper teamMapper;
 
-    private final TeamTaskRepository teamTaskRepository;
-
     public TeamService(
             TeamRepository teamRepository,
             MemberRepository memberRepository,
             ChatGroupRepository chatGroupRepository,
             ChatGroupMapper chatGroupMapper,
-            TeamMapper teamMapper,
-            TeamTaskRepository teamTaskRepository) {
+            TeamMapper teamMapper) {
         this.teamRepository = teamRepository;
         this.memberRepository = memberRepository;
         this.chatGroupRepository = chatGroupRepository;
         this.chatGroupMapper = chatGroupMapper;
         this.teamMapper = teamMapper;
-        this.teamTaskRepository = teamTaskRepository;
     }
 
     public void saveTeam(TeamDto teamDto) throws DuplicateTeamException {
@@ -65,7 +59,6 @@ public class TeamService {
         var team = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
                 .orElseThrow(TeamNotFoundException::new);
 
-        teamTaskRepository.deleteTeamFromAllTasks(team.getId());
         teamRepository.delete(team);
     }
 
@@ -74,12 +67,6 @@ public class TeamService {
         var teamOpt = teamRepository.findTeamByNameAndChatGroupChatId(teamName, chatId)
                 .orElseThrow(TeamNotFoundException::new);
         return teamMapper.toDto(teamOpt);
-    }
-
-    @Transactional(readOnly = true)
-    public List<TeamDto> findAllTeams(List<String> teamNames, Long chatId) {
-        var teams = teamRepository.getAllTeamsByNameAndChatId(teamNames, chatId);
-        return teamMapper.toDtoList(teams);
     }
 
     @Transactional(readOnly = true)
@@ -139,4 +126,5 @@ public class TeamService {
         team.getMembers().remove(member);
         teamMapper.toDto(teamRepository.save(team));
     }
+
 }
