@@ -1,31 +1,37 @@
-# 🚀 TeamingBot
+# TeamingBot 🤖
 
-TeamLinkerBot is a Telegram bot designed to streamline team communication in a single group. It allows admins to manage teams, add members, and send targeted messages directly to team members — keeping your workflow organized and efficient.
+A lightweight Telegram bot built with **Spring Boot**, **Java Telegram Bots API**, and **MySQL**, designed to organize and coordinate team members in group chats.
 
-### 🎯 Features
+## Features
 
- - Team Management
+- 🧩 **Team Management** — Create and manage teams (e.g. `backend`, `frontend`, etc.) within a Telegram group.  
+- 🔔 **Team Mentions** — Mention a team using `#teamname` and automatically notify all members privately.  
+- 🔗 **Message Linking** — Each private notification includes a direct link to the original group message.  
+- ⚙️ **Persistent Storage** — Uses MySQL for storing team and user data.  
+- 🔐 **Built with Spring Boot** — Clean architecture and easy configuration via `.env` or environment variables.
 
- - Create, rename, and delete teams effortlessly.
+## Tech Stack
 
- - Assign members to teams quickly via simple commands or reply actions.
+- **Spring Boot**
+- **TelegramBots Java API**
+- **MySQL**
 
- - Targeted Messaging
+## Configuration
 
- - Send messages to specific teams using ~!teamName.
+Set the following environment variables in a `.env` file or through your environment:
 
- - Works for both supergroups and normal groups:
+```bash
+# DataBase
+DB_URL=jdbc:mysql://localhost:3306/botDB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DB_USERNAME=<UserName>
+DB_PASSWORD=<Password>
 
- - Supergroups: sends clickable jump links.
+# Telegram Bot
+BOT_TOKEN=<BotToken>
+BOT_USERNAME=<BotUserName>
+PROXY_HOST=
+PROXY_PORT=
+PROXY_TYPE=
 
- - Normal groups: forwards messages directly.
-
- - Admin Control
-
- - Only group admins can manage teams.
-
-Ensures unauthorized users cannot modify teams or send messages.
-
-### ⚙️ Technologies
- - Java spring boot (Hibernate ORM)
-
+# SpringBoot
+SERVER_PORT=8080

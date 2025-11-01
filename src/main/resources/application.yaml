@@ -1,11 +1,11 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: ${DB_URL}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/botDB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver # For MySQL
@@ -22,8 +22,8 @@ bot:
   token: ${BOT_TOKEN}
   username: ${BOT_USERNAME}
 
-logging:
-  level:
-    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: DEBUG
+  proxy:
+    host: ${PROXY_HOST:}
+    port: ${PROXY_PORT:}
+    proxy-type: ${PROXY_TYPE:}
 
-debug: true

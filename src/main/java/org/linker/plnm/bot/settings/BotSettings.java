@@ -21,12 +21,14 @@ public class BotSettings {
     @Data
     public static class Proxy {
 
-        private boolean useProxy;
-
         private String host;
 
-        private int port;
+        private Integer port;
 
         private DefaultBotOptions.ProxyType proxyType;
+
+        public boolean hasValidProxy() {
+            return host != null && port != null && proxyType != null;
+        }
     }
 }

@@ -21,7 +21,7 @@ public class BeansConfig {
             DefaultBotOptions defaultBotOptions,
             CommandDispatcher commandDispatcher
     ) {
-        if (botSettings.getProxy() != null && botSettings.getProxy().isUseProxy()) {
+        if ( botSettings.getProxy() != null && botSettings.getProxy().hasValidProxy() ) {
             defaultBotOptions.setProxyHost(botSettings.getProxy().getHost());
             defaultBotOptions.setProxyPort(botSettings.getProxy().getPort());
             defaultBotOptions.setProxyType(botSettings.getProxy().getProxyType());
