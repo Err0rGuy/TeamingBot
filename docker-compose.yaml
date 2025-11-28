@@ -1,0 +1,51 @@
+services:
+  bot:
+    build: .
+    container_name: teaming_bot
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+#    volumes:
+#      - ./application.yaml:/app/application.yaml:Z
+#      - ./.env:/app/.env:Z
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_USERNAME=${BOT_USERNAME}
+      - PROXY_HOST=${PROXY_HOST}
+      - PROXY_PORT=${PROXY_PORT}
+      - PROXY_TYPE=${PROXY_TYPE}
+      - SERVER_PORT=${SERVER_PORT}
+    networks:
+      - bot_net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: focker.ir/mysql:8.0
+    container_name: teaming_bot_db
+    environment:
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - bot_net
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      retries: 5
+      timeout: 2s
+
+volumes:
+  mysql_data:
+
+networks:
+  bot_net:

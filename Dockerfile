@@ -13,5 +13,4 @@ RUN useradd -ms /bin/bash appuser
 COPY --from=build /build/target/*.jar /app/app.jar
 USER appuser
 ENV JAVA_TOOL_OPTIONS="-XX:InitialRAMPercentage=40 -XX:MaxRAMPercentage=75 -Dfile.encoding=UTF-8"
-EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
